@@ -2,12 +2,19 @@ import Box from '@mui/material/Box';
 import Header from '../components/layout/Header';
 import SideBar from '../components/layout/SideBar';
 import CssBaseline from '@mui/material/CssBaseline';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MainContent from '../components/layout/MainContent';
-import { styled } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 const Layout = () => {
-  const [open, setOpen] = useState(true);
+  const theme = useTheme();
+  const mdUp = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
+  const [open, setOpen] = useState<boolean>(mdUp);
+
+  useEffect(() => {
+    setOpen(mdUp);
+  }, [mdUp]);
 
   const drawerWidth = 240;
 
@@ -18,15 +25,6 @@ const Layout = () => {
   const handleDrawerClose = () => {
     setOpen(false);
   };
-
-  const DrawerHeader = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    padding: theme.spacing(0, 1),
-    // necessary for content to be below app bar
-    ...theme.mixins.toolbar,
-    justifyContent: 'flex-end',
-  }));
 
   return (
     <>
@@ -41,13 +39,9 @@ const Layout = () => {
           open={open}
           drawerWidth={drawerWidth}
           handleDrawerClose={handleDrawerClose}
-          DrawerHeader={DrawerHeader}
+          mdUp={mdUp}
         />
-        <MainContent
-          open={open}
-          drawerWidth={drawerWidth}
-          DrawerHeader={DrawerHeader}
-        />
+        <MainContent open={open} drawerWidth={drawerWidth} mdUp={mdUp} />
       </Box>
     </>
   );

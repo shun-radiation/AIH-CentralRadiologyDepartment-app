@@ -9,24 +9,26 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
+import { DrawerHeader } from './header/DrawerHeader';
 
 interface SideBarProps {
   open: boolean;
   drawerWidth: number;
   handleDrawerClose: () => void;
-  DrawerHeader: React.ElementType;
+  mdUp: boolean;
 }
 
 const SideBar = ({
   open,
   drawerWidth,
   handleDrawerClose,
-  DrawerHeader,
+  mdUp,
 }: SideBarProps) => {
   return (
     <>
       <Drawer
         sx={{
+          // display: { xs: 'block', md: 'block' },
           width: drawerWidth,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
@@ -34,9 +36,12 @@ const SideBar = ({
             boxSizing: 'border-box',
           },
         }}
-        variant='persistent'
+        // variant='persistent'
+        variant={mdUp ? 'persistent' : 'temporary'}
         anchor='left'
         open={open}
+        onClose={!mdUp ? handleDrawerClose : undefined}
+        ModalProps={{ keepMounted: true }} // モバイルでのパフォーマンス
       >
         {/* サイドバーを閉じるボタン */}
         <DrawerHeader>
