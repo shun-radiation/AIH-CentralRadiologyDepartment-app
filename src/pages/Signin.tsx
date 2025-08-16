@@ -10,7 +10,7 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { UserAuth } from '../context/AuthContext';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -69,6 +69,9 @@ const Signin = () => {
   // console.log(email, password);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = (location.state as { from?: Location })?.from?.pathname || '/';
 
   const handleSignin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -76,7 +79,7 @@ const Signin = () => {
     try {
       const result = await signinUser(email, password);
       if (result.success) {
-        navigate('/');
+        navigate(from, { replace: true });
         return;
       }
       setError(result.error.message ?? 'Sign in failed.');

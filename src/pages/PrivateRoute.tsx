@@ -1,14 +1,27 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { UserAuth } from '../context/AuthContext';
-import type { ReactNode } from 'react';
+import Layout from './Layout';
 
-const PrivateRoute = ({ children }: { children: ReactNode }) => {
+const PrivateRoute = () => {
   const { session } = UserAuth();
+  const location = useLocation();
+
+  console.log(location);
 
   if (session === undefined) {
     return <p>Loading...</p>;
   }
-  return <>{session ? <>{children}</> : <Navigate to={'/signin'} />}</>;
+  return (
+    <>
+      {session ? (
+        <>
+          <Layout />
+        </>
+      ) : (
+        <Navigate to={'/signin'} replace state={{ from: location }} />
+      )}
+    </>
+  );
 };
 
 export default PrivateRoute;
