@@ -7,11 +7,13 @@ const HelpIconButton = () => {
     <>
       <Tooltip title='ヘルプ'>
         <IconButton
-          size='large'
+          size='medium'
           aria-label='ヘルプを開く'
           // onClick={onHelp}
         >
-          <HelpOutlineIcon />
+          <HelpOutlineIcon
+            sx={{ width: { xs: 24, md: 32 }, height: { xs: 24, md: 32 } }}
+          />
         </IconButton>
       </Tooltip>
     </>

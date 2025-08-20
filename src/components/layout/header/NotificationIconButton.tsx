@@ -8,12 +8,14 @@ const NotificationIconButton = () => {
     <>
       <Tooltip title='通知'>
         <IconButton
-          size='large'
+          size='medium'
           aria-label='通知を開く'
           // onClick={onNotificationsClick}
         >
           <Badge color='error' variant='dot'>
-            <NotificationsIcon />
+            <NotificationsIcon
+              sx={{ width: { xs: 24, md: 32 }, height: { xs: 24, md: 32 } }}
+            />
           </Badge>
         </IconButton>
       </Tooltip>

@@ -26,4 +26,12 @@ export const theme = createTheme({
       },
     },
   },
+  palette: {
+    background: {
+      default: '#f9f9f9',
+    },
+  },
+  // typography: {
+  //   fontFamily: 'Roboto, Arial, sans-serif',
+  // },
 });

@@ -35,7 +35,7 @@ const menuItemIcons: Record<AccountMenu, JSX.Element> = {
 };
 const AccountIconButton = () => {
   // ユーザーメニュー
-  const [isDialogOpen, setIsDialogOpen] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectAccountMenu, setSelectAccountMenu] =
     useState<AccountMenu>('プロフィール');
 
@@ -74,14 +74,22 @@ const AccountIconButton = () => {
       <Tooltip title={userEmail ?? userName}>
         <IconButton
           onClick={handleAvatarClick}
-          size='small'
-          sx={{ ml: 0.5 }}
+          size='medium'
+          // sx={{ ml: 0.5 }}
           aria-controls={isDialogOpen ? 'account-dialog' : undefined}
           aria-haspopup='true'
           aria-expanded={isDialogOpen ? 'true' : undefined}
           aria-label='アカウントメニューを開く'
         >
-          <Avatar sx={{ width: 32, height: 32 }}>{userName?.[0] ?? 'U'}</Avatar>
+          <Avatar
+            sx={{
+              width: { xs: 24, md: 32 },
+              height: { xs: 24, md: 32 },
+              fontSize: 'small',
+            }}
+          >
+            {userName?.[0] ?? 'U'}
+          </Avatar>
         </IconButton>
       </Tooltip>
 
@@ -95,6 +103,7 @@ const AccountIconButton = () => {
         disableAutoFocus
         slotProps={{
           transition: { onEntered: () => descriptionRef.current?.focus() },
+          paper: { sx: { borderRadius: 3 } },
         }}
         sx={{
           '& .MuiDialog-paper': {
