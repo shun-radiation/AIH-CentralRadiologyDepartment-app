@@ -5,12 +5,42 @@ import Link from '@mui/material/Link';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import { TasksProgress } from '../components/home/tasks-progress';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../utils/supabaseClient';
+import type {
+  ModalitiesType,
+  OrganizationType,
+} from '../../types/databaseTypes';
 
 const Home = () => {
+  const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
+  const [modalities, setModalities] = useState<ModalitiesType[]>([]);
   const { session, signout } = UserAuth();
   const navigate = useNavigate();
 
   console.log(session);
+
+  useEffect(() => {
+    getOrganizations();
+    getModalities();
+  }, []);
+
+  const getOrganizations = async () => {
+    const { data, error } = await supabase.from('organizations').select();
+    if (data) {
+      setOrganizations(data);
+    } else {
+      console.error(error);
+    }
+  };
+  const getModalities = async () => {
+    const { data, error } = await supabase.from('modalities').select();
+    if (data) {
+      setModalities(data);
+    } else {
+      console.error(error);
+    }
+  };
 
   const handleSignout = async (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
@@ -52,6 +82,22 @@ const Home = () => {
         >
           Sign out
         </Link>
+        <br />
+        <ul>
+          {organizations.map((organization) => (
+            <li key={organization.id}>
+              abc{organization.name},{organization.id}
+            </li>
+          ))}
+        </ul>
+        <br />
+        <ul>
+          {modalities.map((modality) => (
+            <li key={modality.id}>
+              {modality.id}:{modality.name}
+            </li>
+          ))}
+        </ul>
         <br />
         <Link href='../sample' variant='body2' sx={{ alignSelf: 'center' }}>
           Sample
