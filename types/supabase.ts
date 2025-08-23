@@ -14,27 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      app_auth: {
-        Row: {
-          email: string
-          id: string
-          time: number
-          title: string
-        }
-        Insert: {
-          email: string
-          id?: string
-          time: number
-          title: string
-        }
-        Update: {
-          email?: string
-          id?: string
-          time?: number
-          title?: string
-        }
-        Relationships: []
-      }
       departments: {
         Row: {
           created_at: string
@@ -126,6 +105,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          employee_number: number | null
+          hire_date: string | null
+          id: string
+          modality_id: number | null
+          name_kana: string | null
+          name_kanji: string | null
+          technologist_number: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          employee_number?: number | null
+          hire_date?: string | null
+          id: string
+          modality_id?: number | null
+          name_kana?: string | null
+          name_kanji?: string | null
+          technologist_number?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          employee_number?: number | null
+          hire_date?: string | null
+          id?: string
+          modality_id?: number | null
+          name_kana?: string | null
+          name_kanji?: string | null
+          technologist_number?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_modality_id_fkey"
+            columns: ["modality_id"]
+            isOneToOne: false
+            referencedRelation: "modalities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

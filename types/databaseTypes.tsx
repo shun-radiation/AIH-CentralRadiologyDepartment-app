@@ -19,3 +19,5 @@ export type OrganizationType =
   Database['public']['Tables']['organizations']['Row'];
 
 export type ModalitiesType = Database['public']['Tables']['modalities']['Row'];
+
+export type UserType = Database['public']['Tables']['users']['Row'];

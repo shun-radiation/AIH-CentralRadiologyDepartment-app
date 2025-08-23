@@ -11,14 +11,18 @@ import type {
   ModalitiesType,
   OrganizationType,
 } from '../../types/databaseTypes';
+import { UserInfo } from '../context/UserContext';
 
 const Home = () => {
   const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
   const [modalities, setModalities] = useState<ModalitiesType[]>([]);
   const { session, signout } = UserAuth();
+  const { userInfo } = UserInfo();
   const navigate = useNavigate();
 
-  console.log(session);
+  // console.log('session', session);
+  // console.log('session.user.id', session?.user.id);
+  // console.log(userInfo);
 
   useEffect(() => {
     getOrganizations();
@@ -37,6 +41,7 @@ const Home = () => {
     const { data, error } = await supabase.from('modalities').select();
     if (data) {
       setModalities(data);
+      // console.log(data);
     } else {
       console.error(error);
     }
@@ -99,6 +104,8 @@ const Home = () => {
           ))}
         </ul>
         <br />
+        <Typography>{userInfo?.name_kanji}</Typography>
+        <Typography>{userInfo?.name_kana}</Typography>
         <Link href='../sample' variant='body2' sx={{ alignSelf: 'center' }}>
           Sample
         </Link>

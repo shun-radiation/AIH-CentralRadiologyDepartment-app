@@ -6,7 +6,7 @@ const PrivateRoute = () => {
   const { session } = UserAuth();
   const location = useLocation();
 
-  console.log(location);
+  console.log('location', location);
 
   if (session === undefined) {
     return <p>Loading...</p>;
