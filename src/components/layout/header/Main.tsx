@@ -1,7 +1,8 @@
 import { styled } from '@mui/material/styles';
 
 export const Main = styled('main', {
-  shouldForwardProp: (prop) => prop !== 'open',
+  shouldForwardProp: (prop) =>
+    prop !== 'open' && prop !== 'drawerWidth' && prop !== 'mdUp',
 })<{
   open?: boolean;
   drawerWidth: number;

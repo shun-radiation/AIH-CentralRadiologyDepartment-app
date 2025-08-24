@@ -100,7 +100,6 @@ const AccountIconButton = () => {
         scroll={'paper'}
         aria-labelledby='account-dialog-title'
         aria-describedby='account-dialog-description'
-        disableAutoFocus
         slotProps={{
           transition: { onEntered: () => descriptionRef.current?.focus() },
           paper: { sx: { borderRadius: 3 } },
@@ -222,6 +221,7 @@ const AccountIconButton = () => {
                 id='account-dialog-description'
                 tabIndex={0}
                 sx={{ pt: 1 }}
+                component={'div'}
               >
                 {selectAccountMenuContext[selectAccountMenu]}
               </DialogContentText>

@@ -17,10 +17,15 @@ import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
 import { UserInfo } from '../../../../context/UserContext';
-import type { UserType } from '../../../../../types/databaseTypes';
+import type {
+  UserType,
+  UserWithModality,
+} from '../../../../../types/databaseTypes';
 import { supabase } from '../../../../../utils/supabaseClient';
 import Snackbar from '@mui/material/Snackbar';
 import Alert, { type AlertColor } from '@mui/material/Alert';
+import Autocomplete from '@mui/material/Autocomplete';
+import Button from '@mui/material/Button';
 
 type FieldProps = {
   label: string;
@@ -82,11 +87,12 @@ const ProfileDialog = () => {
   // };
 
   // const isSaving = false;
-  const { userInfo, setUserInfo } = UserInfo();
+  const { userInfo, setUserInfo, modalities } = UserInfo();
   console.log('userInfo', userInfo);
+  console.log('modalities', modalities);
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<UserType | null>(null);
+  const [form, setForm] = useState<UserWithModality | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -103,7 +109,7 @@ const ProfileDialog = () => {
     (key: keyof UserType) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => {
         if (!prev) return prev;
-        return { ...prev, [key]: e.target.value } as UserType;
+        return { ...prev, [key]: e.target.value } as UserWithModality;
       });
     };
 
@@ -130,12 +136,25 @@ const ProfileDialog = () => {
           modality_id: form.modality_id,
         })
         .eq('id', form.id)
-        .select()
+        .select(
+          `
+          id,
+          name_kanji,
+          name_kana,
+          employee_number,
+          technologist_number,
+          hire_date,
+          modality_id,
+          created_at,
+          updated_at,
+          modality:modalities!users_modality_id_fkey ( id,name )
+          `
+        )
         .single();
       if (error) throw error.message;
 
-      setUserInfo(data);
-      setForm(data);
+      setUserInfo(data as UserWithModality);
+      setForm(data as UserWithModality);
 
       // 保存成功時は編集終了
       setEditing(false);
@@ -187,6 +206,11 @@ const ProfileDialog = () => {
                 pb: 0,
                 px: { xs: 2, md: 3 },
                 pt: { xs: 2, md: 3 },
+                '& .MuiCardHeader-action': {
+                  alignSelf: 'center',
+                  mt: 0, // 既定の -4px を打ち消す
+                  mr: -1, // 既定の -8px を緩めたい場合は調整（任意）
+                },
               }}
               avatar={
                 <Avatar
@@ -203,17 +227,30 @@ const ProfileDialog = () => {
                 </Avatar>
               }
               title={
-                <Stack direction='row' alignItems='center' gap={1}>
+                <Stack
+                  direction='row'
+                  alignItems='center'
+                  gap={1}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row', md: 'row' },
+                  }}
+                >
                   <Typography
                     variant='h6'
-                    sx={{ fontWeight: 700, letterSpacing: 0.2 }}
+                    sx={{
+                      display: { xs: 'none', sm: 'block' },
+                      fontWeight: 700,
+                      letterSpacing: 0.2,
+                    }}
                   >
                     プロフィール
                   </Typography>
                   <Chip
                     size='small'
-                    label={form?.modality_id || '未設定'}
+                    label={form?.modality?.name || '未設定'}
                     sx={{
+                      display: { xs: 'none', sm: 'block' },
                       borderRadius: 1.5,
                       bgcolor: 'grey.100',
                     }}
@@ -221,7 +258,11 @@ const ProfileDialog = () => {
                 </Stack>
               }
               subheader={
-                <Typography variant='body2' color='text.secondary'>
+                <Typography
+                  variant='body2'
+                  color='text.secondary'
+                  sx={{ display: { xs: 'none', sm: 'block' } }}
+                >
                   アカウント情報の確認と更新
                 </Typography>
               }
@@ -237,28 +278,29 @@ const ProfileDialog = () => {
                       </IconButton>
                     </Tooltip>
                   ) : (
-                    <Stack direction='row' gap={1}>
-                      <Tooltip title='保存'>
-                        <span>
-                          <IconButton
-                            aria-label='保存'
-                            onClick={handleSave}
-                            disabled={isSaving}
-                            color='primary'
-                          >
-                            <CheckRoundedIcon />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                      <Tooltip title='キャンセル'>
-                        <IconButton
-                          aria-label='キャンセル'
-                          onClick={handleCancel}
-                        >
-                          <CloseRoundedIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+                    <></>
+                    // <Stack direction='row' gap={1}>
+                    //   <Tooltip title='保存'>
+                    //     <span>
+                    //       <IconButton
+                    //         aria-label='保存'
+                    //         onClick={handleSave}
+                    //         disabled={isSaving}
+                    //         color='primary'
+                    //       >
+                    //         <CheckRoundedIcon />
+                    //       </IconButton>
+                    //     </span>
+                    //   </Tooltip>
+                    //   <Tooltip title='キャンセル'>
+                    //     <IconButton
+                    //       aria-label='キャンセル'
+                    //       onClick={handleCancel}
+                    //     >
+                    //       <CloseRoundedIcon />
+                    //     </IconButton>
+                    //   </Tooltip>
+                    // </Stack>
                   )}
                 </Stack>
               }
@@ -270,7 +312,7 @@ const ProfileDialog = () => {
                 <Grid size={12}>
                   <Field
                     label='名前（漢字）'
-                    value={form?.name_kanji}
+                    value={form?.name_kanji ?? ''}
                     onChange={handleChange('name_kanji')}
                     editing={editing}
                     placeholder='例）飯塚 太郎'
@@ -279,7 +321,7 @@ const ProfileDialog = () => {
                 <Grid size={12}>
                   <Field
                     label='名前（カタカナ）'
-                    value={form?.name_kana}
+                    value={form?.name_kana ?? ''}
                     onChange={handleChange('name_kana')}
                     editing={editing}
                     placeholder='例）イイヅカ タロウ'
@@ -287,9 +329,49 @@ const ProfileDialog = () => {
                 </Grid>
 
                 <Grid size={12}>
+                  {editing ? (
+                    <Autocomplete
+                      size='small'
+                      options={modalities}
+                      getOptionLabel={(o) => o.name}
+                      value={
+                        modalities.find((m) => m.id === form?.modality_id) ??
+                        null
+                      }
+                      onChange={(_, v) =>
+                        setForm((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                modality_id: v?.id ?? null,
+                                modality: v ? { id: v.id, name: v.name } : null,
+                              }
+                            : prev
+                        )
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label='部門'
+                          placeholder='選択'
+                        />
+                      )}
+                    />
+                  ) : (
+                    <Field
+                      label='部門'
+                      value={form?.modality?.name ?? ''}
+                      onChange={() => {}}
+                      editing={false}
+                      placeholder='例）一般撮影'
+                    />
+                  )}
+                </Grid>
+
+                <Grid size={12}>
                   <Field
-                    label='職員番号'
-                    value={form?.employee_number}
+                    label='職員番号 (00xxxxx)'
+                    value={form?.employee_number ?? ''}
                     onChange={handleChange('employee_number')}
                     editing={editing}
                     placeholder='例）00xxxxx'
@@ -297,8 +379,8 @@ const ProfileDialog = () => {
                 </Grid>
                 <Grid size={12}>
                   <Field
-                    label='技師番号'
-                    value={form?.technologist_number}
+                    label='技師番号 (xxx)'
+                    value={form?.technologist_number ?? ''}
                     onChange={handleChange('technologist_number')}
                     editing={editing}
                     placeholder='例）xxx'
@@ -307,21 +389,12 @@ const ProfileDialog = () => {
 
                 <Grid size={12}>
                   <Field
-                    label='入社年月日'
-                    value={form?.hire_date}
+                    label='入社年月日 (YYYY-MM-DD)'
+                    value={form?.hire_date ?? ''}
                     onChange={handleChange('hire_date')}
                     editing={editing}
                     placeholder='YYYY-MM-DD'
                     inputMode='numeric'
-                  />
-                </Grid>
-                <Grid size={12}>
-                  <Field
-                    label='部門'
-                    value={form?.modality_id}
-                    onChange={handleChange('modality_id')}
-                    editing={editing}
-                    placeholder='例）一般撮影'
                   />
                 </Grid>
 
@@ -329,7 +402,7 @@ const ProfileDialog = () => {
                   <Grid size={{ xs: 12, md: 12 }}>
                     <TextField
                       label='メールアドレス'
-                      value={userInfo.email}
+                      value={userInfo.email??""}
                       size='small'
                       fullWidth
                       InputProps={{ readOnly: true }}
@@ -340,7 +413,7 @@ const ProfileDialog = () => {
               </Grid>
 
               {/* フッタ操作（モバイル親切） */}
-              {/* {editing && (
+              {editing && (
                 <Stack
                   direction={{ xs: 'column', sm: 'row' }}
                   gap={1.5}
@@ -348,21 +421,21 @@ const ProfileDialog = () => {
                   mt={3}
                 >
                   <Button
-                    // onClick={handleCancel}
+                    onClick={handleCancel}
                     startIcon={<CloseRoundedIcon />}
                   >
                     キャンセル
                   </Button>
                   <Button
                     variant='contained'
-                    // onClick={handleSave}
+                    onClick={handleSave}
                     startIcon={<CheckRoundedIcon />}
-                    // disabled={isSaving}
+                    disabled={isSaving}
                   >
                     保存
                   </Button>
                 </Stack>
-              )} */}
+              )}
             </CardContent>
           </Card>
           <Snackbar

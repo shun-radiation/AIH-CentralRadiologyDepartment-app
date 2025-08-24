@@ -18,6 +18,14 @@ import type { Database } from './supabase';
 export type OrganizationType =
   Database['public']['Tables']['organizations']['Row'];
 
+export type DepartmentsType =
+  Database['public']['Tables']['departments']['Row'];
+
 export type ModalitiesType = Database['public']['Tables']['modalities']['Row'];
 
 export type UserType = Database['public']['Tables']['users']['Row'];
+
+// usersテーブルとmodalitiesテーブルのjoin後のtype
+export type UserWithModality = UserType & {
+  modality: { id: number; name: string } | null;
+};

@@ -1,21 +1,30 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabaseClient';
-import type { UserType } from '../../types/databaseTypes';
+import type { UserWithModality } from '../../types/databaseTypes';
 import { UserAuth } from './AuthContext';
 
 export type UserContextValue = {
-  userInfo: UserType | null;
-  setUserInfo: React.Dispatch<React.SetStateAction<UserType | null>>;
+  userInfo: UserWithModality | null;
+  setUserInfo: React.Dispatch<React.SetStateAction<UserWithModality | null>>;
+  modalities: {
+    id: number;
+    name: string;
+  }[];
 };
 
 const UserContext = createContext<UserContextValue | null>(null);
+
+// ========================================
 
 export const UserContextProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const [userInfo, setUserInfo] = useState<UserType | null>(null);
+  const [userInfo, setUserInfo] = useState<UserWithModality | null>(null);
+  const [modalities, setModalities] = useState<{ id: number; name: string }[]>(
+    []
+  );
 
   const { session } = UserAuth();
 
@@ -28,11 +37,22 @@ export const UserContextProvider = ({
   const getUserInfo = async (uid: string) => {
     const { data, error } = await supabase
       .from('users')
-      .select('*')
+      .select(
+        `id,
+        name_kanji,
+        name_kana,
+        employee_number,
+        technologist_number,
+        hire_date,
+        modality_id, 
+        created_at,
+        updated_at,
+        modality:modalities!users_modality_id_fkey ( id, name )`
+      )
       .eq('id', uid)
       .single();
     if (data) {
-      setUserInfo(data as UserType);
+      setUserInfo(data as UserWithModality);
       // console.log('data', data);
     } else {
       console.error(error);
@@ -40,8 +60,17 @@ export const UserContextProvider = ({
   };
   // console.log('userInfo', userInfo);
 
+  useEffect(() => {
+    supabase
+      .from('modalities')
+      .select('id, name')
+      .then(({ data }) => {
+        setModalities(data ?? []);
+      });
+  }, []);
+
   return (
-    <UserContext.Provider value={{ userInfo, setUserInfo }}>
+    <UserContext.Provider value={{ userInfo, setUserInfo, modalities }}>
       {children}
     </UserContext.Provider>
   );
