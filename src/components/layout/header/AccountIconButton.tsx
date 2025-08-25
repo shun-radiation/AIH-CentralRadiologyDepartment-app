@@ -98,6 +98,7 @@ const AccountIconButton = () => {
         onClose={handleMenuClose}
         open={isDialogOpen}
         scroll={'paper'}
+        disableRestoreFocus
         aria-labelledby='account-dialog-title'
         aria-describedby='account-dialog-description'
         slotProps={{
@@ -127,7 +128,8 @@ const AccountIconButton = () => {
               bgcolor='#eee'
               sx={{
                 overflow: 'hidden', // ← スクロール禁止
-                height: { md: '80vh' },
+                height: { md: 'max(80vh,100%)' },
+                pb: { xs: 1, md: 0 },
               }}
             >
               <Box

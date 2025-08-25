@@ -106,9 +106,49 @@ export type Database = {
         }
         Relationships: []
       }
+      user_experienced_modalities: {
+        Row: {
+          created_at: string
+          id: number
+          modality_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          modality_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          modality_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_experienced_modalities_modality_id_fkey"
+            columns: ["modality_id"]
+            isOneToOne: false
+            referencedRelation: "modalities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_experienced_modalities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
+          email: string | null
           employee_number: number | null
           hire_date: string | null
           id: string
@@ -120,6 +160,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          email?: string | null
           employee_number?: number | null
           hire_date?: string | null
           id: string
@@ -131,6 +172,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          email?: string | null
           employee_number?: number | null
           hire_date?: string | null
           id?: string

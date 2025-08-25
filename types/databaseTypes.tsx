@@ -29,3 +29,6 @@ export type UserType = Database['public']['Tables']['users']['Row'];
 export type UserWithModality = UserType & {
   modality: { id: number; name: string } | null;
 };
+export type FormUser = UserWithModality & {
+  user_experienced_modality_ids: number[];
+};

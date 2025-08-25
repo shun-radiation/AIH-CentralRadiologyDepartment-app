@@ -17,15 +17,13 @@ import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
 import { UserInfo } from '../../../../context/UserContext';
-import type {
-  UserType,
-  UserWithModality,
-} from '../../../../../types/databaseTypes';
+import type { FormUser, UserType } from '../../../../../types/databaseTypes';
 import { supabase } from '../../../../../utils/supabaseClient';
 import Snackbar from '@mui/material/Snackbar';
 import Alert, { type AlertColor } from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
 import Button from '@mui/material/Button';
+import { UserAuth } from '../../../../context/AuthContext';
 
 type FieldProps = {
   label: string;
@@ -87,12 +85,13 @@ const ProfileDialog = () => {
   // };
 
   // const isSaving = false;
+  const { session } = UserAuth();
   const { userInfo, setUserInfo, modalities } = UserInfo();
   console.log('userInfo', userInfo);
   console.log('modalities', modalities);
 
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<UserWithModality | null>(null);
+  const [form, setForm] = useState<FormUser | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -101,15 +100,29 @@ const ProfileDialog = () => {
     useState<AlertColor>('success');
 
   useEffect(() => {
-    setForm(userInfo);
+    setForm(userInfo ?? null);
   }, [userInfo]);
   console.log('form', form);
+
+  useEffect(() => {
+    (async () => {
+      if (!userInfo?.id) return;
+      try {
+        const ids = await getUserExperiencedModalityIds(userInfo.id);
+        setForm((prev) =>
+          prev ? { ...prev, user_experienced_modality_ids: ids } : prev
+        );
+      } catch (e) {
+        console.error('経験済みモダリティの取得に失敗', e);
+      }
+    })();
+  }, [userInfo?.id]);
 
   const handleChange =
     (key: keyof UserType) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => {
         if (!prev) return prev;
-        return { ...prev, [key]: e.target.value } as UserWithModality;
+        return { ...prev, [key]: e.target.value } as FormUser;
       });
     };
 
@@ -153,8 +166,25 @@ const ProfileDialog = () => {
         .single();
       if (error) throw error.message;
 
-      setUserInfo(data as UserWithModality);
-      setForm(data as UserWithModality);
+      const nextIds = form.user_experienced_modality_ids ?? [];
+      await saveUserExperiencedModalities(data.id, nextIds);
+
+      setUserInfo((prev) =>
+        prev
+          ? ({
+              ...prev,
+              ...data,
+              user_experienced_modality_ids: nextIds,
+            } as FormUser)
+          : ({
+              ...(data as FormUser),
+              user_experienced_modality_ids: nextIds,
+            } as FormUser)
+      );
+      setForm({
+        ...(data as FormUser),
+        user_experienced_modality_ids: nextIds,
+      });
 
       // 保存成功時は編集終了
       setEditing(false);
@@ -171,12 +201,53 @@ const ProfileDialog = () => {
     }
   };
 
+  // ★ 追加: 差分同期（upsert & delete）
+  const saveUserExperiencedModalities = async (
+    userId: string,
+    nextIds: number[]
+  ) => {
+    const { data: current, error: readErr } = await supabase
+      .from('user_experienced_modalities')
+      .select('modality_id')
+      .eq('user_id', userId);
+    if (readErr) throw readErr;
+    console.log('aaaaaa', current);
+
+    const curIds = (current ?? []).map((r) => r.modality_id as number);
+    const toInsert = nextIds.filter((id) => !curIds.includes(id));
+    const toDelete = curIds.filter((id) => !nextIds.includes(id));
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase
+        .from('user_experienced_modalities')
+        .upsert(toInsert.map((id) => ({ user_id: userId, modality_id: id })));
+      if (error) throw error;
+    }
+    if (toDelete.length > 0) {
+      const { error } = await supabase
+        .from('user_experienced_modalities')
+        .delete()
+        .eq('user_id', userId)
+        .in('modality_id', toDelete);
+      if (error) throw error;
+    }
+  };
+
   const handleSnackbarClose = (
     _e?: React.SyntheticEvent | Event,
     reason?: string
   ) => {
     if (reason === 'clickaway') return; // 外側クリックで勝手に閉じない
     setSnackbarOpen(false);
+  };
+
+  const getUserExperiencedModalityIds = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('user_experienced_modalities')
+      .select('modality_id')
+      .eq('user_id', userId);
+    if (error) throw error;
+    return (data ?? []).map((r) => r.modality_id as number);
   };
 
   return (
@@ -188,7 +259,7 @@ const ProfileDialog = () => {
         sx={{
           bgcolor: '#f6f7f9',
           minHeight: '100%',
-          py: { xs: 3, md: 6 },
+          py: { xs: 3, md: 3 },
         }}
       >
         <Container maxWidth='md'>
@@ -250,7 +321,7 @@ const ProfileDialog = () => {
                     size='small'
                     label={form?.modality?.name || '未設定'}
                     sx={{
-                      display: { xs: 'none', sm: 'block' },
+                      display: { xs: 'none', sm: 'inline-flex' },
                       borderRadius: 1.5,
                       bgcolor: 'grey.100',
                     }}
@@ -261,7 +332,7 @@ const ProfileDialog = () => {
                 <Typography
                   variant='body2'
                   color='text.secondary'
-                  sx={{ display: { xs: 'none', sm: 'block' } }}
+                  sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
                 >
                   アカウント情報の確認と更新
                 </Typography>
@@ -395,6 +466,87 @@ const ProfileDialog = () => {
                     editing={editing}
                     placeholder='YYYY-MM-DD'
                     inputMode='numeric'
+                  />
+                </Grid>
+
+                {/* ★ 経験済みモダリティ（複数） */}
+                <Grid size={12}>
+                  {editing ? (
+                    <Autocomplete
+                      multiple
+                      size='small'
+                      options={modalities}
+                      getOptionLabel={(o) => o.name}
+                      value={modalities.filter((m) =>
+                        (form?.user_experienced_modality_ids ?? []).includes(
+                          m.id
+                        )
+                      )}
+                      onChange={(_, newValue) =>
+                        setForm((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                user_experienced_modality_ids: newValue.map(
+                                  (v) => v.id
+                                ),
+                              }
+                            : prev
+                        )
+                      }
+                      renderTags={(value, getTagProps) =>
+                        value.map((option, index) => (
+                          <Chip
+                            {...getTagProps({ index })}
+                            key={option.id}
+                            label={option.name}
+                          />
+                        ))
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label='経験済みモダリティ（複数選択可）' // ★表記だけ明確化
+                          placeholder='選択'
+                        />
+                      )}
+                    />
+                  ) : (
+                    // 閲覧モードは見やすいように Chip 群で表示（任意）
+                    <Stack gap={0.5}>
+                      <Typography variant='caption' color='text.secondary'>
+                        経験済みモダリティ（複数）
+                      </Typography>
+                      <Stack direction='row' gap={0.5} flexWrap='wrap'>
+                        {(form?.user_experienced_modality_ids ?? [])
+                          .map(
+                            (id) => modalities.find((m) => m.id === id)?.name
+                          )
+                          .filter(Boolean)
+                          .map((name) => (
+                            <Chip key={name} size='small' label={name} />
+                          ))}
+                      </Stack>
+                    </Stack>
+                  )}
+                </Grid>
+
+                <Grid size={12}>
+                  <TextField
+                    label='登録済みメールアドレス'
+                    value={session?.user.email ?? ''}
+                    size='small'
+                    fullWidth
+                    placeholder=''
+                    slotProps={{
+                      input: { readOnly: true },
+                      htmlInput: { inputMode: 'email' },
+                      inputLabel: { shrink: true },
+                    }}
+                    sx={{
+                      '& .MuiInputBase-root': { bgcolor: 'grey.50' },
+                    }}
+                    aria-readonly
                   />
                 </Grid>
 

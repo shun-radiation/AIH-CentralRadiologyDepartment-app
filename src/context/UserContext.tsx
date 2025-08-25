@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabaseClient';
-import type { UserWithModality } from '../../types/databaseTypes';
+import type { FormUser } from '../../types/databaseTypes';
 import { UserAuth } from './AuthContext';
 
 export type UserContextValue = {
-  userInfo: UserWithModality | null;
-  setUserInfo: React.Dispatch<React.SetStateAction<UserWithModality | null>>;
+  userInfo: FormUser | null;
+  setUserInfo: React.Dispatch<React.SetStateAction<FormUser | null>>;
   modalities: {
     id: number;
     name: string;
@@ -21,7 +21,7 @@ export const UserContextProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [userInfo, setUserInfo] = useState<UserWithModality | null>(null);
+  const [userInfo, setUserInfo] = useState<FormUser | null>(null);
   const [modalities, setModalities] = useState<{ id: number; name: string }[]>(
     []
   );
@@ -52,7 +52,7 @@ export const UserContextProvider = ({
       .eq('id', uid)
       .single();
     if (data) {
-      setUserInfo(data as UserWithModality);
+      setUserInfo(data as FormUser);
       // console.log('data', data);
     } else {
       console.error(error);
