@@ -1,7 +1,25 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
+import Box from '@mui/material/Box';
 
 const Nomatch = () => {
-  return <div>Nomatch</div>;
+  return (
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          justifyContent: 'center',
+          alignItems: 'center',
+          fontSize: '40px',
+        }}
+      >
+        NoMatch
+        <br />
+        <Link to={'/'}>ホームはこちら</Link>
+      </Box>
+    </>
+  );
 };
 
 export default Nomatch;
