@@ -15,11 +15,11 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import CloseIcon from '@mui/icons-material/Close';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ProfileDialog from './accountMenu/ProfileDialog';
 import SettingDialog from './accountMenu/SettingDialog';
 import SignoutDialog from './accountMenu/SignoutDialog';
+import { Button, DialogActions } from '@mui/material';
 
 const userName = 'ユーザー';
 const userEmail = '仮メール';
@@ -129,26 +129,9 @@ const AccountIconButton = () => {
               sx={{
                 overflow: 'hidden', // ← スクロール禁止
                 height: { md: 'max(80vh,100%)' },
-                pb: { xs: 1, md: 0 },
               }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: { xs: 'flex-end', md: 'flex-start' },
-                }}
-              >
-                <IconButton onClick={handleMenuClose} aria-label='閉じる'>
-                  <CloseIcon
-                    sx={{
-                      fontSize: 'large',
-                      m: { xs: 1, md: 2 },
-                      color: '#333',
-                    }}
-                  />
-                </IconButton>
-              </Box>
-              <List sx={{ pt: 0 }}>
+              <List sx={{ py: { xs: 3, md: 5 } }}>
                 <Grid
                   container
                   rowSpacing={2}
@@ -230,6 +213,11 @@ const AccountIconButton = () => {
             </Box>
           </Box>
         </DialogContent>
+        <DialogActions>
+          <Button onClick={handleMenuClose} variant='contained' color='primary'>
+            閉じる
+          </Button>
+        </DialogActions>
       </Dialog>
     </div>
   );

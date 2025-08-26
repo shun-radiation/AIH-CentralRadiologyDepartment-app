@@ -42,7 +42,7 @@ const SignoutDialog = () => {
     <>
       <Box
         sx={{
-          minHeight: { md: '70vh' },
+          minHeight: { md: '60vh' },
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
