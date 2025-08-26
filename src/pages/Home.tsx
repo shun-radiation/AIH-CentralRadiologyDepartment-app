@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { UserAuth } from '../context/AuthContext';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
@@ -16,9 +15,8 @@ import { UserInfo } from '../context/UserContext';
 const Home = () => {
   const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
   const [modalities, setModalities] = useState<ModalitiesType[]>([]);
-  const { session, signout } = UserAuth();
+  const { session } = UserAuth();
   const { userInfo } = UserInfo();
-  const navigate = useNavigate();
 
   // console.log('session', session);
   // console.log('session.user.id', session?.user.id);
@@ -47,18 +45,6 @@ const Home = () => {
     }
   };
 
-  const handleSignout = async (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
-  ) => {
-    e.preventDefault();
-    try {
-      await signout();
-      navigate('signin');
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const room = [
     '51A撮影室',
     // '操作廊下',
@@ -79,14 +65,7 @@ const Home = () => {
       <Box>
         <Typography>Home</Typography>
         <Typography>Welcome, {session?.user.email} 様 !</Typography>
-        <Link
-          href='../signout'
-          variant='body2'
-          sx={{ alignSelf: 'center' }}
-          onClick={handleSignout}
-        >
-          Sign out
-        </Link>
+
         <br />
         <ul>
           {organizations.map((organization) => (
