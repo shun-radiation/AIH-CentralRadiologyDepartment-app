@@ -5,13 +5,14 @@ import Signin from './pages/Signin';
 import SignUp from './pages/Signup';
 import PrivateRoute from './pages/PrivateRoute';
 import Sample from './pages/Sample';
-import XrayPage from './pages/modalities/XrayPage';
-import CTPage from './pages/modalities/CTPage';
-import MRIPage from './pages/modalities/MRIPage';
-import AngioPage from './pages/modalities/AngioPage';
-import FluoroscopyPage from './pages/modalities/FluoroscopyPage';
-import RIPage from './pages/modalities/RIPage';
-import RadiotherapyPage from './pages/modalities/RadiotherapyPage';
+import XrayPage from './pages/sideBarLists/modalities/XrayPage';
+import CTPage from './pages/sideBarLists/modalities/CTPage';
+import MRIPage from './pages/sideBarLists/modalities/MRIPage';
+import AngioPage from './pages/sideBarLists/modalities/AngioPage';
+import FluoroscopyPage from './pages/sideBarLists/modalities/FluoroscopyPage';
+import RIPage from './pages/sideBarLists/modalities/RIPage';
+import RadiotherapyPage from './pages/sideBarLists/modalities/RadiotherapyPage';
+import FAQ from './pages/sideBarLists/FAQ';
 // import { router } from './router';
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
           <Route path='/Fluoroscopy_page' element={<FluoroscopyPage />} />
           <Route path='/RI_page' element={<RIPage />} />
           <Route path='/Radiotherapy_page' element={<RadiotherapyPage />} />
+          <Route path='/FAQ_page' element={<FAQ />} />
         </Route>
         <Route path='/signup' element={<SignUp />} />
         <Route path='/signin' element={<Signin />} />

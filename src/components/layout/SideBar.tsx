@@ -1,3 +1,4 @@
+import { Link, useLocation } from 'react-router-dom';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
@@ -16,7 +17,7 @@ import { PiHeartbeat } from 'react-icons/pi';
 import { BiCameraMovie } from 'react-icons/bi';
 import { BiSolidInjection } from 'react-icons/bi';
 import { GiSinusoidalBeam } from 'react-icons/gi';
-import { Link, useLocation } from 'react-router-dom';
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 
 interface SideBarProps {
   open: boolean;
@@ -158,6 +159,22 @@ const SideBar = ({
                   <GiSinusoidalBeam />
                 </ListItemIcon>
                 <ListItemText primary={'放射線治療'} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+          <Divider />
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to='/FAQ_page'
+                selected={location.pathname === '/FAQ_page'}
+                aria-label='FAQページへ移動'
+              >
+                <ListItemIcon>
+                  <QuestionAnswerIcon />
+                </ListItemIcon>
+                <ListItemText primary={'FAQ'} />
               </ListItemButton>
             </ListItem>
           </List>
