@@ -9,15 +9,15 @@ import {
 } from '@mui/material';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import { useState } from 'react';
-import { UserInfo } from '../../../../context/UserContext';
 import { UserAuth } from '../../../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useUserInfo } from '../../../../context/userInfo/useUserInfo';
 
 const SignoutDialog = () => {
   const [loading, setLoading] = useState(false);
 
   const { session, signout } = UserAuth();
-  const { userInfo } = UserInfo();
+  const { userInfo } = useUserInfo();
 
   const navigate = useNavigate();
 

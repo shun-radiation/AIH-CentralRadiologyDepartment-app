@@ -1,18 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../../utils/supabaseClient';
-import type { FormUser } from '../../types/databaseTypes';
-import { UserAuth } from './AuthContext';
-
-export type UserContextValue = {
-  userInfo: FormUser | null;
-  setUserInfo: React.Dispatch<React.SetStateAction<FormUser | null>>;
-  modalities: {
-    id: number;
-    name: string;
-  }[];
-};
-
-const UserContext = createContext<UserContextValue | null>(null);
+import { useEffect, useState } from 'react';
+import { supabase } from '../../../utils/supabaseClient';
+import type { FormUser } from '../../../types/databaseTypes';
+import { UserAuth } from '../AuthContext';
+import { UserContext } from './useUserInfo';
 
 // ========================================
 
@@ -74,11 +64,4 @@ export const UserContextProvider = ({
       {children}
     </UserContext.Provider>
   );
-};
-
-export const UserInfo = (): UserContextValue => {
-  const ctx = useContext(UserContext);
-  if (!ctx)
-    throw new Error('useUserInfo must be used within <UserContextProvider>');
-  return ctx;
 };

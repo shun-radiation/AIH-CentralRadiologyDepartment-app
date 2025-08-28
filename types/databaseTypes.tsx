@@ -32,3 +32,6 @@ export type UserWithModality = UserType & {
 export type FormUser = UserWithModality & {
   user_experienced_modality_ids: number[];
 };
+
+export type CalendarEvents =
+  Database['public']['Tables']['calendar_events']['Row'];

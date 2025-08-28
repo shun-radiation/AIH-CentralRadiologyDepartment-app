@@ -16,7 +16,6 @@ import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
-import { UserInfo } from '../../../../context/UserContext';
 import type { FormUser, UserType } from '../../../../../types/databaseTypes';
 import { supabase } from '../../../../../utils/supabaseClient';
 import Snackbar from '@mui/material/Snackbar';
@@ -24,6 +23,7 @@ import Alert, { type AlertColor } from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
 import Button from '@mui/material/Button';
 import { UserAuth } from '../../../../context/AuthContext';
+import { useUserInfo } from '../../../../context/userInfo/useUserInfo';
 
 type FieldProps = {
   label: string;
@@ -86,7 +86,7 @@ const ProfileDialog = () => {
 
   // const isSaving = false;
   const { session } = UserAuth();
-  const { userInfo, setUserInfo, modalities } = UserInfo();
+  const { userInfo, setUserInfo, modalities } = useUserInfo();
   console.log('userInfo', userInfo);
   console.log('modalities', modalities);
 

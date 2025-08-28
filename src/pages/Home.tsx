@@ -10,13 +10,32 @@ import type {
   ModalitiesType,
   OrganizationType,
 } from '../../types/databaseTypes';
-import { UserInfo } from '../context/UserContext';
+import Calendar from './dashboard/Calendar';
+// import { useDateInfo } from '../context/dateInfo/useDateInfo';
+import { useUserInfo } from '../context/userInfo/useUserInfo';
 
 const Home = () => {
   const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
   const [modalities, setModalities] = useState<ModalitiesType[]>([]);
   const { session } = UserAuth();
-  const { userInfo } = UserInfo();
+  const { userInfo } = useUserInfo();
+  // const {
+  //   timeZone,
+  //   currentYear,
+  //   currentMonth,
+  //   currentDate,
+  //   isoDate,
+  //   now,
+  //   // setBaseDate,
+  //   // clearBaseDate,
+  // } = useDateInfo();
+
+  // console.log('timeZone', timeZone);
+  // console.log('currentYear', currentYear);
+  // console.log('currentMonth', currentMonth);
+  // console.log('currentDate', currentDate);
+  // console.log('isoDate', isoDate);
+  // console.log('now', now);
 
   // console.log('session', session);
   // console.log('session.user.id', session?.user.id);
@@ -62,6 +81,14 @@ const Home = () => {
   ];
   return (
     <>
+      <Calendar
+      // monthlyTransactions={monthlyTransactions}
+      // setCurrentMonth={setCurrentMonth}
+      // currentDay={currentDay}
+      // setCurrentDay={setCurrentDay}
+      // today={today}
+      // onDateClick={handleDateClick}
+      />
       <Box>
         <Typography>Home</Typography>
         <Typography>Welcome, {session?.user.email} 様 !</Typography>
