@@ -12,11 +12,10 @@ import interactionPlugin, {
 import type { EventApi, ViewApi } from '@fullcalendar/core/index.js';
 import tippy, { type Instance } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
-
-// import type { EventContentArg } from '@fullcalendar/core/index.js';
 import '../../styles/calendar.css';
+import * as JapaneseHolidays from 'japanese-holidays';
+
 // import { useTheme } from '@mui/material';
-// import { isSameMonth } from 'date-fns';
 
 // =================================================
 
@@ -103,8 +102,64 @@ const Calendar = () =>
       start: isoDate,
       display: 'background',
       // backgroundColor: theme.palette.incomeColor.light,
-      backgroundColor: 'green',
+      backgroundColor: '#a6f5acb5',
     };
+
+    // 祝日（背景イベント）を当月分だけ生成
+    const holidayBgEvents = useMemo(() => {
+      const y = Number(selectYearMonth.slice(0, 4));
+      const m = Number(selectYearMonth.slice(5, 7));
+
+      // その年の祝日一覧（振替・国民の休日を含む）
+      const japaneseHolidaysList =
+        JapaneseHolidays.getHolidaysOf(y, /*furikae*/ true) || [];
+      // const japaneseHolidaysList = //一例(2025年度の場合)
+      //   { month: 1, date: 1, name: '元日' },
+      //   { month: 1, date: 13, name: '成人の日' },
+      //   { month: 2, date: 11, name: '建国記念の日' },
+      //   { month: 2, date: 23, name: '天皇誕生日' },
+      //   { month: 2, date: 24, name: '振替休日' },
+      //   { month: 3, date: 20, name: '春分の日' },
+      //   { month: 4, date: 29, name: '昭和の日' },
+      //   { month: 5, date: 3, name: '憲法記念日' },
+      //   { month: 5, date: 4, name: 'みどりの日' },
+      //   { month: 5, date: 5, name: 'こどもの日' },
+      //   { month: 5, date: 6, name: '振替休日' },
+      //   { month: 7, date: 21, name: '海の日' },
+      //   { month: 8, date: 11, name: '山の日' },
+      //   { month: 9, date: 15, name: '敬老の日' },
+      //   { month: 9, date: 23, name: '秋分の日' },
+      //   { month: 10, date: 13, name: 'スポーツの日' },
+      //   { month: 11, date: 3, name: '文化の日' },
+      //   { month: 11, date: 23, name: '勤労感謝の日' },
+      //   { month: 11, date: 24, name: '振替休日' },
+      // ];
+
+      const aihHolidaysList = [
+        // {month:,date:,name:}
+        { month: 1, date: 2, name: '正月?(aih)' },
+        { month: 1, date: 3, name: '正月?(aih)' },
+        { month: 12, date: 30, name: '年末?(aih)' },
+        { month: 12, date: 31, name: '年末?(aih)' },
+      ];
+
+      const list = [...japaneseHolidaysList, ...aihHolidaysList];
+
+      return list
+        .filter((h) => h.month === m)
+        .map((h) => {
+          const day = String(h.date).padStart(2, '0');
+          return {
+            title: h.name,
+            start: `${selectYearMonth}-${day}`, // YYYY-MM-DD
+            allDay: true,
+            display: 'background', // ← 背景塗り
+            backgroundColor: 'transparent',
+            extendedProps: { isHoliday: true },
+            className: 'is-holiday',
+          };
+        });
+    }, [selectYearMonth]);
 
     console.log('selectYearMonth', selectYearMonth);
     console.log('calendar_allEvents', calendar_allEvents);
@@ -112,6 +167,7 @@ const Calendar = () =>
     console.log('選択年月のイベントとbackground', [
       ...calendar_monthlyEvents,
       backgroundEvent,
+      ...holidayBgEvents,
     ]);
 
     // 日付を選択した時の処理
@@ -233,13 +289,12 @@ const Calendar = () =>
         <Typography>{`選択年月のイベントとbackground////${[
           ...calendar_monthlyEvents,
           backgroundEvent,
+          ...holidayBgEvents,
         ]}`}</Typography>
         <Paper
           sx={{
             p: 3,
             bgcolor: 'pink',
-            '& .fc': { fontSize: '14px' },
-            '& .fc-toolbar-title': { fontSize: '30px', fontWeight: 'bold' },
           }}
         >
           {/* <h1>Demo App</h1> */}
@@ -247,7 +302,11 @@ const Calendar = () =>
             locale={jaLocale}
             plugins={[dayGridPlugin, interactionPlugin]}
             initialView='dayGridMonth'
-            events={[...calendar_monthlyEvents, backgroundEvent]}
+            events={[
+              ...calendar_monthlyEvents,
+              backgroundEvent,
+              ...holidayBgEvents,
+            ]}
             // eventContent={renderEventContent}
             dateClick={handleDateClick}
             eventMouseEnter={handleEventHover}
@@ -258,7 +317,12 @@ const Calendar = () =>
               ).padStart(2, '0')}`;
               setSelectYearMonth(ym);
             }}
-            height={'700px'}
+            height={'auto'}
+            // height={'800px'}
+            dayCellClassNames={(arg) => {
+              const name = JapaneseHolidays.isHolidayAt(arg.date); // 日本時間ベースで判定 // arg.date はその日の 00:00 の Date
+              return name ? ['is-holiday'] : [];
+            }}
           />
         </Paper>
       </>

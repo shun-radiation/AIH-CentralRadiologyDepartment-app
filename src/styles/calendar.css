@@ -1,3 +1,7 @@
+.fc {
+  font-size: 14px;
+}
+
 /* aタグ */
 .fc-h-event {
   /* background-color: transparent; */
@@ -12,12 +16,40 @@
   background-color: white; /* 背景色を白に設定 */
 }
 
-.fc-col-header-cell {
-  background-color: #42a5f5;
-  color: white; /* ヘッダーのテキスト色を白に設定 */
-}
-
 .fc .fc-daygrid-day-frame {
   height: 100%;
   min-height: 100px;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 30px;
+}
+
+/* // 土曜日 */
+.fc-day-sat {
+  color: blue;
+  background-color: rgba(0, 153, 255, 0.05);
+}
+
+/* // 日曜日 */
+.fc-day-sun {
+  color: red;
+  background-color: rgba(255, 0, 55, 0.05);
+}
+
+/* 祝日セルの数字を赤く、やや太字に */
+.fc-daygrid-day:has(.is-holiday) {
+  color: red;
+  background-color: rgba(255, 99, 132, 0.05);
+}
+
+/* // 当月以外の日（月カレンダーに一緒に表示される前後の月） */
+.fc-day-other {
+  color: rgb(81, 79, 79);
+  background-color: rgba(100, 100, 100, 0.08);
+}
+
+.fc-col-header-cell {
+  background-color: #42a5f5;
+  color: white; /* ヘッダーのテキスト色を白に設定 */
 }
