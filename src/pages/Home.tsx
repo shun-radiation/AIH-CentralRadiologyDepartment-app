@@ -11,7 +11,9 @@ import type {
   ModalitiesType,
   OrganizationType,
 } from '../../types/databaseTypes';
-import Calendar from './dashboard/Calendar';
+import Calendar, {
+  type CalendarMonthlyEventsProps,
+} from './dashboard/Calendar';
 // import { useDateInfo } from '../context/dateInfo/useDateInfo';
 import { useUserInfo } from '../context/userInfo/useUserInfo';
 import CalendarEventForm from './dashboard/CalendarEventForm';
@@ -22,6 +24,10 @@ const Home = () => {
   const [calendar_allEvents, setCalendar_allEvents] = useState<
     CalendarEvents[]
   >([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCalendarEvent, setSelectedCalendarEvent] =
+    useState<CalendarMonthlyEventsProps | null>(null);
+
   const { session } = UserAuth();
   const { userInfo } = useUserInfo();
   // const {
@@ -89,6 +95,10 @@ const Home = () => {
       <Calendar
         calendar_allEvents={calendar_allEvents}
         setCalendar_allEvents={setCalendar_allEvents}
+        isDialogOpen={isDialogOpen}
+        setIsDialogOpen={setIsDialogOpen}
+        selectedCalendarEvent={selectedCalendarEvent}
+        setSelectedCalendarEvent={setSelectedCalendarEvent}
         // monthlyTransactions={monthlyTransactions}
         // setCurrentMonth={setCurrentMonth}
         // currentDay={currentDay}
@@ -99,6 +109,10 @@ const Home = () => {
       <CalendarEventForm
         calendar_allEvents={calendar_allEvents}
         setCalendar_allEvents={setCalendar_allEvents}
+        isDialogOpen={isDialogOpen}
+        setIsDialogOpen={setIsDialogOpen}
+        selectedCalendarEvent={selectedCalendarEvent}
+        setSelectedCalendarEvent={setSelectedCalendarEvent}
       />
       <Box>
         <Typography>Home</Typography>

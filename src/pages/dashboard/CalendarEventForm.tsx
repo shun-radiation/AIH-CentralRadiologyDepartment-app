@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CalendarEvents } from '../../../types/databaseTypes';
@@ -45,16 +45,23 @@ import { UserAuth } from '../../context/AuthContext';
 interface CalendarEventFormProps {
   calendar_allEvents: CalendarEvents[];
   setCalendar_allEvents: React.Dispatch<React.SetStateAction<CalendarEvents[]>>;
+  isDialogOpen: boolean;
+  setIsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedCalendarEvent: CalendarMonthlyEventsProps | null;
+  setSelectedCalendarEvent: React.Dispatch<
+    React.SetStateAction<CalendarMonthlyEventsProps | null>
+  >;
 }
 
 const CalendarEventForm = ({
-  calendar_allEvents,
+  // calendar_allEvents,
   setCalendar_allEvents,
+  isDialogOpen,
+  setIsDialogOpen,
+  selectedCalendarEvent,
+  setSelectedCalendarEvent,
 }: CalendarEventFormProps) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(true);
   // const [calendarEvents, setCalendarEvents] = useState<CalendarEvents[]>([]);
-  const [selectedCalendarEvent, setSelectedCalendarEvent] =
-    useState<CalendarMonthlyEventsProps | null>(null);
   // const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const { session } = UserAuth();

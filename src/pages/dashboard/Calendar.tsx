@@ -36,12 +36,22 @@ export type CalendarMonthlyEventsProps = {
 interface CalendarProps {
   calendar_allEvents: CalendarEvents[];
   setCalendar_allEvents: React.Dispatch<React.SetStateAction<CalendarEvents[]>>;
+  isDialogOpen: boolean;
+  setIsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedCalendarEvent: CalendarMonthlyEventsProps | null;
+  setSelectedCalendarEvent: React.Dispatch<
+    React.SetStateAction<CalendarMonthlyEventsProps | null>
+  >;
 }
 
 const Calendar = ({
   calendar_allEvents,
   setCalendar_allEvents,
-}: CalendarProps) => {
+}: // isDialogOpen,
+// setIsDialogOpen,
+// selectedCalendarEvent,
+// setSelectedCalendarEvent,
+CalendarProps) => {
   const {
     // timeZone,
     // currentYear,
@@ -184,7 +194,7 @@ const Calendar = ({
     ...holidayBgEvents,
   ]);
 
-  // 日付を選択した時の処理
+  // 日付を選択した時の処理;
   const handleDateClick = (dateInfo: DateClickArg) => {
     // console.log(dateInfo);
     setSelectDate(dateInfo.dateStr);
@@ -192,9 +202,9 @@ const Calendar = ({
   };
   console.log('selectDate', selectDate);
 
-  // // イベントコンテント
+  // イベントコンテント;
   // const renderEventContent = (eventInfo: EventContentArg) => {
-  //   console.log(eventInfo);
+  //   console.log('eventInfo', eventInfo);
   //   console.log(eventInfo.event._def.title);
   //   return (
   //     <div>

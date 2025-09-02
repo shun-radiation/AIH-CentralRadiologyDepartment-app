@@ -53,3 +53,15 @@
   background-color: #42a5f5;
   color: white; /* ヘッダーのテキスト色を白に設定 */
 }
+
+/* リロード後にサイドバーを閉じるとfullcalendarが端による現象解決 */
+.fc-daygrid-body {
+  width: auto !important;
+}
+.fc-scrollgrid-sync-table {
+  width: 100% !important;
+}
+.fc-col-header {
+  width: 100% !important;
+}
+/* ------------------------------------------------- */
