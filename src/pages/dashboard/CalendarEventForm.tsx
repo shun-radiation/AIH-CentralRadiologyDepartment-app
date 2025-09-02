@@ -17,12 +17,8 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { useEffect, useState } from 'react';
-import {
-  Controller,
-  useForm,
-  //  type SubmitHandler
-} from 'react-hook-form';
+import { useEffect, useMemo, useState } from 'react';
+import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CalendarEvents } from '../../../types/databaseTypes';
 // import type { Schema } from '../../validations/schema';
@@ -42,13 +38,27 @@ import { MdEmojiEvents } from 'react-icons/md';
 import { CiCircleMore } from 'react-icons/ci';
 import { CalendarEventSchema, type Schema } from '../../validations/schema';
 import { useDateInfo } from '../../context/dateInfo/useDateInfo';
+import { supabase } from '../../../utils/supabaseClient';
+import type { CalendarMonthlyEventsProps } from './Calendar';
+import { UserAuth } from '../../context/AuthContext';
 
-const CalendarEventForm = () => {
+interface CalendarEventFormProps {
+  calendar_allEvents: CalendarEvents[];
+  setCalendar_allEvents: React.Dispatch<React.SetStateAction<CalendarEvents[]>>;
+}
+
+const CalendarEventForm = ({
+  calendar_allEvents,
+  setCalendar_allEvents,
+}: CalendarEventFormProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(true);
   // const [calendarEvents, setCalendarEvents] = useState<CalendarEvents[]>([]);
   const [selectedCalendarEvent, setSelectedCalendarEvent] =
-    useState<CalendarEvents | null>(null);
+    useState<CalendarMonthlyEventsProps | null>(null);
   // const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const { session } = UserAuth();
+  // console.log(session?.user.id);
 
   const {
     // timeZone,
@@ -64,10 +74,11 @@ const CalendarEventForm = () => {
   // react-hook-form
   const {
     control,
-    // handleSubmit,
+    handleSubmit,
     formState: { errors },
     watch,
     setValue,
+    reset,
   } = useForm<Schema>({
     defaultValues: {
       date: isoDate,
@@ -83,55 +94,53 @@ const CalendarEventForm = () => {
 
   const isAllDay = watch('is_allday');
 
-  // is_allday が false になったら値をクリアしたい場合
+  // is_allday が true になったら値をクリアしたい場合
   useEffect(() => {
-    if (!isAllDay) {
+    if (isAllDay) {
       setValue('start_at', null);
       setValue('end_at', null);
     }
   }, [isAllDay, setValue]);
 
   // 保存処理
-  // const handleSaveCalendarEvent = async (calendarEvent: Schema) => {
-  //   try {
-  //     console.log(calendarEvent);
-  //     // Supabaseにデータを保存
-  //     const { data, error } = await supabase
-  //       .from('calendar_events')
-  //       .insert(calendarEvent) // 単一レコードでもオブジェクトでOK
-  //       .select()
-  //       .single(); // 返り値を1件に絞る
+  const handleSaveCalendarEvent = async (calendarEvent: Schema) => {
+    try {
+      console.log('calendarEvent', {
+        user_id: session?.user.id,
+        ...calendarEvent,
+      });
+      if (!session?.user.id) return;
+      // Supabaseにデータを保存
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .insert({ user_id: session?.user.id, ...calendarEvent }) // 単一レコードでもオブジェクトでOK
+        .select()
+        .single(); // 返り値を1件に絞る
 
-  //     if (error) {
-  //       // Supabase のエラー
-  //       console.error('Supabaseのエラーは', error);
-  //       console.error('Supabaseのエラーメッセージは', error.message);
-  //       console.error('Supabaseのエラー詳細は', error.details);
-  //       console.error('Supabaseのエラーコードは', error.code);
-  //       return;
-  //     }
+      if (error) {
+        // Supabase のエラー
+        console.error('Supabaseのエラーは', error);
+        console.error('Supabaseのエラーメッセージは', error.message);
+        console.error('Supabaseのエラー詳細は', error.details);
+        console.error('Supabaseのエラーコードは', error.code);
+        return;
+      }
 
-  //     const newCalendarEvent: CalendarEvents = {
-  //       id: data.id, // SupabaseのテーブルでPRIMARY KEY(id)を設定している前提
-  //       ...calendarEvent,
-  //     };
-  //     console.log('Inserted calendar event: ', newCalendarEvent);
+      const newCalendarEvent = {
+        id: data.id, // SupabaseのテーブルでPRIMARY KEY(id)を設定している前提
+        ...calendarEvent,
+      } as CalendarEvents;
+      console.log('Inserted calendar event: ', newCalendarEvent);
 
-  //     setCalendarEvents((prevCalendarEvent) => [
-  //       ...prevCalendarEvent,
-  //       newCalendarEvent,
-  //     ]);
-  //   } catch (err) {
-  //     // error
-  //     if (isFireStoreError(err)) {
-  //       console.error('firebaseのエラーは', err);
-  //       console.error('firebaseのエラーメッセージは', err.message);
-  //       console.error('firebaseのエラーコードは', err.code);
-  //     } else {
-  //       console.error('一般的なエラーは', err);
-  //     }
-  //   }
-  // };
+      setCalendar_allEvents((prevCalendarEvent) => [
+        ...prevCalendarEvent,
+        newCalendarEvent,
+      ]);
+    } catch (err) {
+      // error
+      console.error('一般的なエラーは', err);
+    }
+  };
 
   // // 削除処理
   // const handleDeleteCalendarEvent = async (
@@ -199,36 +208,40 @@ const CalendarEventForm = () => {
     setIsDialogOpen((prev) => !prev);
   };
 
-  // // 送信処理
-  // const onSubmit: SubmitHandler<Schema> = (data) => {
-  //   console.log(data);
-  //   if (selectedCalendarEvent) {
-  //     handleUpdateCalendarEvent(data, selectedCalendarEvent.id)
-  //       .then(() => {
-  //         console.log('更新しました。');
-  //         setSelectedCalendarEvent(null);
-  //         setIsDialogOpen(false);
-  //       })
-  //       .catch((error) => {
-  //         console.error(error);
-  //       });
-  //   } else {
-  //     handleSaveCalendarEvent(data)
-  //       .then(() => {
-  //         console.log('保存しました。');
-  //       })
-  //       .catch((error) => {
-  //         console.error(error);
-  //       });
-  //   }
-  //   reset({
-  //     type: 'expense',
-  //     date: currentDay,
-  //     category: '',
-  //     amount: 0,
-  //     content: '',
-  //   });
-  // };
+  // 送信処理
+  const onSubmit: SubmitHandler<Schema> = (data) => {
+    console.log(data);
+    // if (selectedCalendarEvent) {
+    //   handleUpdateCalendarEvent(data, selectedCalendarEvent.id)
+    //     .then(() => {
+    //       console.log('更新しました。');
+    //       setSelectedCalendarEvent(null);
+    //       setIsDialogOpen(false);
+    //     })
+    //     .catch((error) => {
+    //       console.error(error);
+    //     });
+    // } else {
+    handleSaveCalendarEvent(data)
+      .then(() => {
+        console.log('保存しました。');
+        setSelectedCalendarEvent(null);
+        setIsDialogOpen(false);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+    // }
+    reset({
+      date: data.date,
+      category: '',
+      title: '',
+      description: '',
+      is_allday: true,
+      start_at: null,
+      end_at: null,
+    });
+  };
 
   // // フォームを削除
   // const handleDelete = () => {
@@ -239,24 +252,44 @@ const CalendarEventForm = () => {
   //   }
   // };
 
-  const categories = [
-    { label: '全員', icon: <PeopleAltIcon /> },
-    { label: '一般撮影', icon: <GiKneeCap /> },
-    { label: 'CT', icon: <TbDeviceComputerCamera /> },
-    { label: 'MRI', icon: <IoMagnetSharp /> },
-    { label: '心カテ・Angio', icon: <PiHeartbeat /> },
-    { label: '透視・内視鏡', icon: <BiCameraMovie /> },
-    { label: 'RI', icon: <BiSolidInjection /> },
-    { label: '放射線治療', icon: <GiSinusoidalBeam /> },
-    { label: '事務', icon: <BsPersonWorkspace /> },
-    { label: '全体会議', icon: <RecordVoiceOverIcon /> },
-    { label: '管理職', icon: <RecordVoiceOverIcon /> },
-    { label: '主任', icon: <RecordVoiceOverIcon /> },
-    { label: '勉強会(院内)', icon: <MdCastForEducation /> },
-    { label: '勉強会(院外)', icon: <MdCastForEducation /> },
-    { label: 'イベント行事', icon: <MdEmojiEvents /> },
-    { label: 'その他', icon: <CiCircleMore /> },
-  ];
+  const categories = useMemo(
+    () => [
+      { label: '全員', icon: <PeopleAltIcon /> },
+      { label: '一般撮影', icon: <GiKneeCap /> },
+      { label: 'CT', icon: <TbDeviceComputerCamera /> },
+      { label: 'MRI', icon: <IoMagnetSharp /> },
+      { label: '心カテ・Angio', icon: <PiHeartbeat /> },
+      { label: '透視・内視鏡', icon: <BiCameraMovie /> },
+      { label: 'RI', icon: <BiSolidInjection /> },
+      { label: '放射線治療', icon: <GiSinusoidalBeam /> },
+      { label: '事務', icon: <BsPersonWorkspace /> },
+      { label: '全体会議', icon: <RecordVoiceOverIcon /> },
+      { label: '管理職', icon: <RecordVoiceOverIcon /> },
+      { label: '主任', icon: <RecordVoiceOverIcon /> },
+      { label: '勉強会(院内)', icon: <MdCastForEducation /> },
+      { label: '勉強会(院外)', icon: <MdCastForEducation /> },
+      { label: 'イベント行事', icon: <MdEmojiEvents /> },
+      { label: 'その他', icon: <CiCircleMore /> },
+    ],
+    []
+  );
+
+  useEffect(() => {
+    // 選択肢が更新されたか確認
+    if (selectedCalendarEvent) {
+      const categoryExists = categories.some(
+        (category) => category.label === selectedCalendarEvent.category
+      );
+      console.log(categories);
+      console.log(categoryExists);
+      setValue(
+        'category',
+        categoryExists
+          ? (selectedCalendarEvent.category as Schema['category'])
+          : ''
+      );
+    }
+  }, [selectedCalendarEvent, categories, setValue]);
 
   return (
     <Dialog
@@ -281,10 +314,7 @@ const CalendarEventForm = () => {
           </IconButton>
         </Box>
         {/* フォーム要素 */}
-        <Box
-          component={'form'}
-          // onSubmit={handleSubmit(onSubmit)}
-        >
+        <Box component={'form'} onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={2}>
             {/* 日付 */}
             <Controller
@@ -306,6 +336,22 @@ const CalendarEventForm = () => {
                 />
               )}
             />
+
+            {/* タイトル */}
+            <Controller
+              name='title'
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label='タイトル'
+                  type='text'
+                  error={!!errors.title}
+                  helperText={errors.title?.message}
+                />
+              )}
+            />
+
             {/* カテゴリ */}
             <Controller
               name='category'
@@ -313,10 +359,7 @@ const CalendarEventForm = () => {
               render={({ field }) => {
                 // console.log({ ...field });
                 return (
-                  <FormControl
-                    fullWidth
-                    // error={!!errors.category}
-                  >
+                  <FormControl fullWidth error={!!errors.category}>
                     <InputLabel id='category-select-label'>カテゴリ</InputLabel>
                     <Select
                       {...field}
@@ -335,21 +378,6 @@ const CalendarEventForm = () => {
                   </FormControl>
                 );
               }}
-            />
-
-            {/* タイトル */}
-            <Controller
-              name='title'
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label='タイトル'
-                  type='text'
-                  error={!!errors.title}
-                  helperText={errors.title?.message}
-                />
-              )}
             />
 
             {/* 備考 */}
@@ -400,7 +428,8 @@ const CalendarEventForm = () => {
                       htmlInput: { step: 600 },
                     }}
                     error={!!errors.start_at}
-                    helperText={errors.start_at ? '開始時刻を入力' : ''}
+                    // helperText={errors.start_at ? '開始時刻を入力' : ''}
+                    helperText={errors.start_at?.message}
                   />
                 )}
               />
@@ -420,7 +449,8 @@ const CalendarEventForm = () => {
                       htmlInput: { step: 600 },
                     }}
                     error={!!errors.end_at}
-                    helperText={errors.end_at ? '終了時刻を入力' : ''}
+                    // helperText={errors.end_at ? '終了時刻を入力' : ''}
+                    helperText={errors.end_at?.message}
                   />
                 )}
               />

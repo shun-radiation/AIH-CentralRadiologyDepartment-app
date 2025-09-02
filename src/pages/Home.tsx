@@ -7,6 +7,7 @@ import { TasksProgress } from '../components/home/tasks-progress';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../utils/supabaseClient';
 import type {
+  CalendarEvents,
   ModalitiesType,
   OrganizationType,
 } from '../../types/databaseTypes';
@@ -18,6 +19,9 @@ import CalendarEventForm from './dashboard/CalendarEventForm';
 const Home = () => {
   const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
   const [modalities, setModalities] = useState<ModalitiesType[]>([]);
+  const [calendar_allEvents, setCalendar_allEvents] = useState<
+    CalendarEvents[]
+  >([]);
   const { session } = UserAuth();
   const { userInfo } = useUserInfo();
   // const {
@@ -83,14 +87,19 @@ const Home = () => {
   return (
     <>
       <Calendar
-      // monthlyTransactions={monthlyTransactions}
-      // setCurrentMonth={setCurrentMonth}
-      // currentDay={currentDay}
-      // setCurrentDay={setCurrentDay}
-      // today={today}
-      // onDateClick={handleDateClick}
+        calendar_allEvents={calendar_allEvents}
+        setCalendar_allEvents={setCalendar_allEvents}
+        // monthlyTransactions={monthlyTransactions}
+        // setCurrentMonth={setCurrentMonth}
+        // currentDay={currentDay}
+        // setCurrentDay={setCurrentDay}
+        // today={today}
+        // onDateClick={handleDateClick}
       />
-      <CalendarEventForm />
+      <CalendarEventForm
+        calendar_allEvents={calendar_allEvents}
+        setCalendar_allEvents={setCalendar_allEvents}
+      />
       <Box>
         <Typography>Home</Typography>
         <Typography>Welcome, {session?.user.email} 様 !</Typography>

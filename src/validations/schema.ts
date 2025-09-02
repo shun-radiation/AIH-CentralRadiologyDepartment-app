@@ -4,27 +4,29 @@ import dayjs from 'dayjs';
 const baseSchema = {
   date: z.string().min(1, { message: '日付は必須です。' }),
   title: z.string().min(1, { message: 'タイトルは必須です。' }),
-  category: z.union([
-    z.enum([
-      '全員',
-      '一般撮影',
-      'CT',
-      'MRI',
-      '心カテ・Angio',
-      '透視・内視鏡',
-      'RI',
-      '放射線治療',
-      '事務',
-      '全体会議',
-      '管理職',
-      '主任',
-      '勉強会(院内)',
-      '勉強会(院外)',
-      'イベント行事',
-      'その他',
-    ]),
-    z.literal(''),
-  ]),
+  category: z
+    .union([
+      z.enum([
+        '全員',
+        '一般撮影',
+        'CT',
+        'MRI',
+        '心カテ・Angio',
+        '透視・内視鏡',
+        'RI',
+        '放射線治療',
+        '事務',
+        '全体会議',
+        '管理職',
+        '主任',
+        '勉強会(院内)',
+        '勉強会(院外)',
+        'イベント行事',
+        'その他',
+      ]),
+      z.literal(''),
+    ])
+    .refine((val) => val !== '', { message: 'カテゴリーを選択してください。' }),
   description: z.string().min(1, { message: '内容を入力してください。' }),
 };
 
@@ -32,8 +34,8 @@ const baseSchema = {
 const AllDayEventSchema = z.object({
   ...baseSchema,
   is_allday: z.literal(true),
-  start_at: z.union([z.string(), z.null()]).optional(),
-  end_at: z.union([z.string(), z.null()]).optional(),
+  start_at: z.union([z.string(), z.null()]),
+  end_at: z.union([z.string(), z.null()]),
 });
 
 // ⏰ is_allday が false の場合 → start_at, end_at 必須 & 時刻比較
@@ -51,7 +53,7 @@ const TimedEventSchema = z
       return end.isAfter(start);
     },
     {
-      message: '終了時刻は開始時刻より後にしてください',
+      message: '開始時刻より後にしてください',
       path: ['end_at'],
     }
   );
