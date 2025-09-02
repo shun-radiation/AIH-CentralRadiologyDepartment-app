@@ -13,6 +13,7 @@ import type {
 import Calendar from './dashboard/Calendar';
 // import { useDateInfo } from '../context/dateInfo/useDateInfo';
 import { useUserInfo } from '../context/userInfo/useUserInfo';
+import CalendarEventForm from './dashboard/CalendarEventForm';
 
 const Home = () => {
   const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
@@ -89,6 +90,7 @@ const Home = () => {
       // today={today}
       // onDateClick={handleDateClick}
       />
+      <CalendarEventForm />
       <Box>
         <Typography>Home</Typography>
         <Typography>Welcome, {session?.user.email} 様 !</Typography>
