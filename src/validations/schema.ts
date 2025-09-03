@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+dayjs.extend(customParseFormat);
 
 const baseSchema = {
   date: z.string().min(1, { message: '日付は必須です。' }),
@@ -34,8 +36,13 @@ const baseSchema = {
 const AllDayEventSchema = z.object({
   ...baseSchema,
   is_allday: z.literal(true),
-  start_at: z.union([z.string(), z.null()]),
-  end_at: z.union([z.string(), z.null()]),
+  start_at: z.null(),
+  end_at: z.null(),
+});
+
+// 共通：HH:mm 形式チェック
+const HHMM = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+  message: 'HH:mm 形式で入力してください。',
 });
 
 // ⏰ is_allday が false の場合 → start_at, end_at 必須 & 時刻比較
@@ -43,20 +50,57 @@ const TimedEventSchema = z
   .object({
     ...baseSchema,
     is_allday: z.literal(false),
-    start_at: z.string().min(1, { message: '開始時刻は必須です。' }), // "HH:mm"
-    end_at: z.string().min(1, { message: '終了時刻は必須です。' }), // "HH:mm"
+    start_at: HHMM, // 例: "09:30"
+    end_at: HHMM, // 例: "10:00"
   })
-  .refine(
-    ({ start_at, end_at }) => {
-      const start = dayjs(start_at, 'HH:mm');
-      const end = dayjs(end_at, 'HH:mm');
-      return end.isAfter(start);
-    },
-    {
-      message: '開始時刻より後にしてください',
-      path: ['end_at'],
+  .superRefine(({ start_at, end_at }, ctx) => {
+    const s = dayjs(start_at, 'HH:mm', true); // strict 解析
+    const e = dayjs(end_at, 'HH:mm', true);
+
+    if (!s.isValid()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: '開始時刻が不正です。',
+        path: ['start_at'],
+      });
+      return;
     }
-  );
+    if (!e.isValid()) {
+      ctx.addIssue({
+        code: 'custom',
+        message: '終了時刻が不正です。',
+        path: ['end_at'],
+      });
+      return;
+    }
+    if (!e.isAfter(s)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: '開始時刻より後にしてください',
+        path: ['end_at'],
+      });
+    }
+  });
+
+// // ⏰ is_allday が false の場合 → start_at, end_at 必須 & 時刻比較
+// const TimedEventSchema = z
+//   .object({
+//     ...baseSchema,
+//     is_allday: z.literal(false),
+//     start_at: z.string().min(1, { message: '開始時刻は必須です。' }), // "HH:mm"
+//     end_at: z.string().min(1, { message: '終了時刻は必須です。' }), // "HH:mm"
+//   })
+//   .refine(
+//     ({ start_at, end_at }) => {
+//       const start = dayjs(start_at, 'HH:mm');
+//       const end = dayjs(end_at, 'HH:mm');
+//       return end.isAfter(start);
+//     },
+//     {
+//       message: '開始時刻より後にしてください',
+//       path: ['end_at'],
+//     }
+//   );
 
 export const CalendarEventSchema = z.discriminatedUnion('is_allday', [
   AllDayEventSchema,

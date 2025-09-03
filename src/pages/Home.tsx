@@ -17,6 +17,7 @@ import Calendar, {
 // import { useDateInfo } from '../context/dateInfo/useDateInfo';
 import { useUserInfo } from '../context/userInfo/useUserInfo';
 import CalendarEventForm from './dashboard/CalendarEventForm';
+import { useDateInfo } from '../context/dateInfo/useDateInfo';
 
 const Home = () => {
   const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
@@ -30,6 +31,9 @@ const Home = () => {
 
   const { session } = UserAuth();
   const { userInfo } = useUserInfo();
+  const { isoDate } = useDateInfo();
+
+  const [selectDate, setSelectDate] = useState<string>(isoDate);
   // const {
   //   timeZone,
   //   currentYear,
@@ -99,6 +103,8 @@ const Home = () => {
         setIsDialogOpen={setIsDialogOpen}
         selectedCalendarEvent={selectedCalendarEvent}
         setSelectedCalendarEvent={setSelectedCalendarEvent}
+        selectDate={selectDate}
+        setSelectDate={setSelectDate}
         // monthlyTransactions={monthlyTransactions}
         // setCurrentMonth={setCurrentMonth}
         // currentDay={currentDay}
@@ -113,6 +119,7 @@ const Home = () => {
         setIsDialogOpen={setIsDialogOpen}
         selectedCalendarEvent={selectedCalendarEvent}
         setSelectedCalendarEvent={setSelectedCalendarEvent}
+        selectDate={selectDate}
       />
       <Box>
         <Typography>Home</Typography>

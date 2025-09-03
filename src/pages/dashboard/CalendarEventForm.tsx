@@ -51,6 +51,7 @@ interface CalendarEventFormProps {
   setSelectedCalendarEvent: React.Dispatch<
     React.SetStateAction<CalendarMonthlyEventsProps | null>
   >;
+  selectDate: string;
 }
 
 const CalendarEventForm = ({
@@ -60,6 +61,7 @@ const CalendarEventForm = ({
   setIsDialogOpen,
   selectedCalendarEvent,
   setSelectedCalendarEvent,
+  selectDate,
 }: CalendarEventFormProps) => {
   // const [calendarEvents, setCalendarEvents] = useState<CalendarEvents[]>([]);
   // const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -86,10 +88,12 @@ const CalendarEventForm = ({
     watch,
     setValue,
     reset,
+    trigger,
+    clearErrors,
   } = useForm<Schema>({
     defaultValues: {
       date: isoDate,
-      title: '',
+      title: selectDate,
       category: '',
       description: '',
       is_allday: true,
@@ -97,17 +101,48 @@ const CalendarEventForm = ({
       end_at: null,
     },
     resolver: zodResolver(CalendarEventSchema),
+    mode: 'onChange', // ← 入力のたびに検証
+    reValidateMode: 'onChange', // ← エラー後の再検証も入力のたび
   });
+
+  useEffect(() => {
+    if (!isDialogOpen) return;
+    // if (selectedCalendarEvent) {
+    //   // 編集時：選択イベントでフォームを上書き
+    //   const ev = selectedCalendarEvent;
+    //   reset({
+    //     date: ev.date,
+    //     title: ev.title ?? '',
+    //     category: (ev.category as Schema['category']) ?? '',
+    //     description: ev.description ?? '',
+    //     is_allday: !!ev.is_allday,
+    //     start_at: ev.start_at ?? null,
+    //     end_at: ev.end_at ?? null,
+    //   });
+    // } else {
+    // 新規追加時：selectDate を反映して初期化
+    reset({
+      date: selectDate,
+      title: '',
+      category: '',
+      description: '',
+      is_allday: true,
+      start_at: null,
+      end_at: null,
+    });
+    // }
+  }, [isDialogOpen, selectDate, selectedCalendarEvent, reset]);
 
   const isAllDay = watch('is_allday');
 
   // is_allday が true になったら値をクリアしたい場合
   useEffect(() => {
     if (isAllDay) {
-      setValue('start_at', null);
-      setValue('end_at', null);
+      setValue('start_at', null, { shouldValidate: true });
+      setValue('end_at', null, { shouldValidate: true });
+      clearErrors(['start_at', 'end_at']);
     }
-  }, [isAllDay, setValue]);
+  }, [isAllDay, setValue, clearErrors]);
 
   // 保存処理
   const handleSaveCalendarEvent = async (calendarEvent: Schema) => {
@@ -416,6 +451,7 @@ const CalendarEventForm = ({
                   <FormControlLabel
                     control={<Switch {...field} checked={field.value} />}
                     label='終日'
+                    sx={{ m: 0 }}
                   />
                 )}
               />
@@ -430,6 +466,13 @@ const CalendarEventForm = ({
                     label='開始時刻'
                     type='time'
                     disabled={isAllDay} // ← 終日が true のとき灰色（入力不可）
+                    value={field.value ?? ''} // ← 表示は常に string
+                    onChange={(e) => {
+                      field.onChange(
+                        e.target.value === '' ? null : e.target.value
+                      ); // ← '' は null に正規化
+                      void trigger('end_at'); // ← start変更で end を再検証
+                    }}
                     slotProps={{
                       inputLabel: { shrink: true },
                       htmlInput: { step: 600 },
@@ -451,6 +494,13 @@ const CalendarEventForm = ({
                     label='終了時刻'
                     type='time'
                     disabled={isAllDay} // ← 終日が true のとき灰色（入力不可）
+                    value={field.value ?? ''} // ← 表示は常に string
+                    onChange={(e) => {
+                      field.onChange(
+                        e.target.value === '' ? null : e.target.value
+                      ); // ← '' は null に正規化
+                      void trigger('end_at'); // ← 自身も即再検証（安全策）
+                    }}
                     slotProps={{
                       inputLabel: { shrink: true },
                       htmlInput: { step: 600 },

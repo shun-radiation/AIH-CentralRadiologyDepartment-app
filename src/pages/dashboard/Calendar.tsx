@@ -14,6 +14,7 @@ import tippy, { type Instance } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import '../../styles/calendar.css';
 import * as JapaneseHolidays from 'japanese-holidays';
+import { UserAuth } from '../../context/AuthContext';
 
 // import { useTheme } from '@mui/material';
 
@@ -42,15 +43,19 @@ interface CalendarProps {
   setSelectedCalendarEvent: React.Dispatch<
     React.SetStateAction<CalendarMonthlyEventsProps | null>
   >;
+  selectDate: string;
+  setSelectDate: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const Calendar = ({
   calendar_allEvents,
   setCalendar_allEvents,
+  setIsDialogOpen,
+  setSelectedCalendarEvent,
+  selectDate,
+  setSelectDate,
 }: // isDialogOpen,
-// setIsDialogOpen,
 // selectedCalendarEvent,
-// setSelectedCalendarEvent,
 CalendarProps) => {
   const {
     // timeZone,
@@ -63,6 +68,8 @@ CalendarProps) => {
     // clearBaseDate,
   } = useDateInfo();
 
+  const { session } = UserAuth();
+
   // console.log('timeZone', timeZone);
   // console.log('currentYear', currentYear);
   // console.log('currentMonth', currentMonth);
@@ -73,7 +80,6 @@ CalendarProps) => {
   const [selectYearMonth, setSelectYearMonth] = useState<string>(
     isoDate.substring(0, 7) // 2025-08-01 ➡︎ 2025-08へ変換
   );
-  const [selectDate, setSelectDate] = useState<string>(isoDate);
 
   //   const theme = useTheme();
 
@@ -201,6 +207,15 @@ CalendarProps) => {
     // setIsMobileDrawerOpen(true);
   };
   console.log('selectDate', selectDate);
+
+  const handleAddCalendarEvent = () => {
+    // alert(selectDate);
+    setIsDialogOpen(true);
+    if (!session?.user.id) return;
+    console.log(selectDate);
+
+    setSelectedCalendarEvent(null);
+  };
 
   // イベントコンテント;
   // const renderEventContent = (eventInfo: EventContentArg) => {
@@ -331,6 +346,8 @@ CalendarProps) => {
             backgroundEvent,
             ...holidayBgEvents,
           ]}
+          selectable={true}
+          // editable={true}
           // eventContent={renderEventContent}
           dateClick={handleDateClick}
           eventMouseEnter={handleEventHover}
@@ -347,6 +364,20 @@ CalendarProps) => {
           dayCellClassNames={(arg) => {
             const name = JapaneseHolidays.isHolidayAt(arg.date); // 日本時間ベースで判定 // arg.date はその日の 00:00 の Date
             return name ? ['is-holiday'] : [];
+          }}
+          headerToolbar={{
+            // start: 'title', // leftと書いてもよい
+            // center: 'myCustomButton', // 下で定義したカスタムボタンを設定する
+            // end: 'today prev,next',
+            end: 'today prev,next myCustomButton',
+          }}
+          customButtons={{
+            myCustomButton: {
+              text: '✚ イベントを追加',
+              click: () => {
+                handleAddCalendarEvent();
+              },
+            },
           }}
         />
       </Paper>
