@@ -9,12 +9,17 @@ import type { CalendarEvents } from '../../../types/databaseTypes';
 import interactionPlugin, {
   type DateClickArg,
 } from '@fullcalendar/interaction';
-import type { EventApi, ViewApi } from '@fullcalendar/core/index.js';
+import type {
+  EventApi,
+  EventClickArg,
+  ViewApi,
+} from '@fullcalendar/core/index.js';
 import tippy, { type Instance } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import '../../styles/calendar.css';
 import * as JapaneseHolidays from 'japanese-holidays';
 import { UserAuth } from '../../context/AuthContext';
+import { extractYMD } from '../../utils/date';
 
 // import { useTheme } from '@mui/material';
 
@@ -24,12 +29,12 @@ export type CalendarMonthlyEventsProps = {
   id: string;
   user_id: string;
   date: string;
-  category: string;
   title: string;
+  category: string;
   description: string | null;
+  is_allday: boolean;
   start_at: string | null;
   end_at: string | null;
-  is_allday: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -217,6 +222,41 @@ CalendarProps) => {
     setSelectedCalendarEvent(null);
   };
 
+  const handleCalendarEventClick = (arg: EventClickArg) => {
+    // alert(selectDate);
+    if (!arg.event._instance?.range.start) return;
+
+    console.log(arg.event._def.publicId);
+    console.log(arg.event._def.extendedProps.user_id);
+    console.log(extractYMD(arg.event._instance?.range.start).isoDate);
+    console.log(arg.event._def.title);
+    console.log(arg.event._def.extendedProps.category);
+    console.log(arg.event._def.extendedProps.description);
+    console.log(arg.event._def.extendedProps.is_allday);
+    console.log(arg.event._def.extendedProps.start_at);
+    console.log(arg.event._def.extendedProps.end_at);
+    console.log(arg.event._def.extendedProps.created_at);
+    console.log(arg.event._def.extendedProps.updated_at);
+
+    const selectedCalendarEventContent = {
+      id: arg.event._def.publicId,
+      user_id: arg.event._def.extendedProps.user_id,
+      date: extractYMD(arg.event._instance?.range.start).isoDate,
+      title: arg.event._def.title,
+      category: arg.event._def.extendedProps.category,
+      description: arg.event._def.extendedProps.description,
+      is_allday: arg.event._def.extendedProps.is_allday,
+      start_at: arg.event._def.extendedProps.start_at,
+      end_at: arg.event._def.extendedProps.end_at,
+      created_at: arg.event._def.extendedProps.created_at,
+      updated_at: arg.event._def.extendedProps.updated_at,
+    };
+    console.log(selectedCalendarEventContent);
+
+    setIsDialogOpen(true);
+    setSelectedCalendarEvent(selectedCalendarEventContent);
+  };
+
   // イベントコンテント;
   // const renderEventContent = (eventInfo: EventContentArg) => {
   //   console.log('eventInfo', eventInfo);
@@ -347,6 +387,7 @@ CalendarProps) => {
             ...holidayBgEvents,
           ]}
           selectable={true}
+          eventClick={handleCalendarEventClick}
           // editable={true}
           // eventContent={renderEventContent}
           dateClick={handleDateClick}
@@ -369,10 +410,10 @@ CalendarProps) => {
             // start: 'title', // leftと書いてもよい
             // center: 'myCustomButton', // 下で定義したカスタムボタンを設定する
             // end: 'today prev,next',
-            end: 'today prev,next myCustomButton',
+            end: 'today prev,next addCalendarEventButton',
           }}
           customButtons={{
-            myCustomButton: {
+            addCalendarEventButton: {
               text: '✚ イベントを追加',
               click: () => {
                 handleAddCalendarEvent();

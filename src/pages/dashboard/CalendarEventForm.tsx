@@ -52,6 +52,7 @@ interface CalendarEventFormProps {
     React.SetStateAction<CalendarMonthlyEventsProps | null>
   >;
   selectDate: string;
+  setSelectDate: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const CalendarEventForm = ({
@@ -62,6 +63,7 @@ const CalendarEventForm = ({
   selectedCalendarEvent,
   setSelectedCalendarEvent,
   selectDate,
+  setSelectDate,
 }: CalendarEventFormProps) => {
   // const [calendarEvents, setCalendarEvents] = useState<CalendarEvents[]>([]);
   // const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -69,16 +71,7 @@ const CalendarEventForm = ({
   const { session } = UserAuth();
   // console.log(session?.user.id);
 
-  const {
-    // timeZone,
-    // currentYear,
-    // currentMonth,
-    // currentDate,
-    isoDate,
-    // now,
-    // setBaseDate,
-    // clearBaseDate,
-  } = useDateInfo();
+  const { isoDate } = useDateInfo();
 
   // react-hook-form
   const {
@@ -107,30 +100,46 @@ const CalendarEventForm = ({
 
   useEffect(() => {
     if (!isDialogOpen) return;
-    // if (selectedCalendarEvent) {
-    //   // 編集時：選択イベントでフォームを上書き
-    //   const ev = selectedCalendarEvent;
-    //   reset({
-    //     date: ev.date,
-    //     title: ev.title ?? '',
-    //     category: (ev.category as Schema['category']) ?? '',
-    //     description: ev.description ?? '',
-    //     is_allday: !!ev.is_allday,
-    //     start_at: ev.start_at ?? null,
-    //     end_at: ev.end_at ?? null,
-    //   });
-    // } else {
-    // 新規追加時：selectDate を反映して初期化
-    reset({
-      date: selectDate,
-      title: '',
-      category: '',
-      description: '',
-      is_allday: true,
-      start_at: null,
-      end_at: null,
-    });
-    // }
+    console.log(selectedCalendarEvent?.is_allday);
+    console.log(!selectedCalendarEvent?.is_allday);
+    console.log(!!selectedCalendarEvent?.is_allday);
+
+    if (selectedCalendarEvent) {
+      // 編集時：選択イベントでフォームを上書き
+      const ev = selectedCalendarEvent;
+      const base = {
+        date: ev.date,
+        title: ev.title ?? '',
+        category: (ev.category as Schema['category']) ?? '',
+        description: ev.description ?? '',
+      };
+      reset(
+        ev.is_allday
+          ? {
+              ...base,
+              is_allday: true as const,
+              start_at: null,
+              end_at: null,
+            }
+          : {
+              ...base,
+              is_allday: false as const,
+              start_at: ev.start_at ?? '',
+              end_at: ev.end_at ?? '',
+            }
+      );
+    } else {
+      // 新規追加時：selectDate を反映して初期化
+      reset({
+        date: selectDate,
+        title: '',
+        category: '',
+        description: '',
+        is_allday: true,
+        start_at: null,
+        end_at: null,
+      });
+    }
   }, [isDialogOpen, selectDate, selectedCalendarEvent, reset]);
 
   const isAllDay = watch('is_allday');
@@ -247,7 +256,8 @@ const CalendarEventForm = ({
   // フォームclose処理
   const handleCloseForm = () => {
     setSelectedCalendarEvent(null);
-    setIsDialogOpen((prev) => !prev);
+    setIsDialogOpen(false);
+    setSelectDate(isoDate);
   };
 
   // 送信処理
@@ -316,23 +326,6 @@ const CalendarEventForm = ({
     []
   );
 
-  useEffect(() => {
-    // 選択肢が更新されたか確認
-    if (selectedCalendarEvent) {
-      const categoryExists = categories.some(
-        (category) => category.label === selectedCalendarEvent.category
-      );
-      console.log(categories);
-      console.log(categoryExists);
-      setValue(
-        'category',
-        categoryExists
-          ? (selectedCalendarEvent.category as Schema['category'])
-          : ''
-      );
-    }
-  }, [selectedCalendarEvent, categories, setValue]);
-
   return (
     <Dialog
       open={isDialogOpen}
@@ -370,7 +363,6 @@ const CalendarEventForm = ({
                   slotProps={{
                     inputLabel: {
                       shrink: true,
-                      style: { color: 'red' },
                     },
                   }}
                   error={!!errors.date}

@@ -120,6 +120,7 @@ const Home = () => {
         selectedCalendarEvent={selectedCalendarEvent}
         setSelectedCalendarEvent={setSelectedCalendarEvent}
         selectDate={selectDate}
+        setSelectDate={setSelectDate}
       />
       <Box>
         <Typography>Home</Typography>

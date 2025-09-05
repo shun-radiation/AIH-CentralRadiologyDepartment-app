@@ -1,5 +1,5 @@
 /** 指定TZで y/m/d を取り出す小道具 */
-export const extractYMD = (date: Date, timeZone: string) => {
+export const extractYMD = (date: Date, timeZone: string = 'Asia/Tokyo') => {
   // Intl.DateTimeFormatでTZに沿った暦情報を得る
   const fmt = new Intl.DateTimeFormat('en-CA', {
     timeZone,
