@@ -2,7 +2,9 @@ import {
   Box,
   Button,
   Dialog,
+  DialogActions,
   DialogContent,
+  DialogTitle,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -17,7 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { CalendarEvents } from '../../../types/databaseTypes';
@@ -41,6 +43,9 @@ import { useDateInfo } from '../../context/dateInfo/useDateInfo';
 import { supabase } from '../../../utils/supabaseClient';
 import type { CalendarMonthlyEventsProps } from './Calendar';
 import { UserAuth } from '../../context/AuthContext';
+import { Avatar } from '@mui/material';
+import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
+import Zoom from '@mui/material/Zoom';
 
 interface CalendarEventFormProps {
   calendar_allEvents: CalendarEvents[];
@@ -56,7 +61,7 @@ interface CalendarEventFormProps {
 }
 
 const CalendarEventForm = ({
-  // calendar_allEvents,
+  calendar_allEvents,
   setCalendar_allEvents,
   isDialogOpen,
   setIsDialogOpen,
@@ -67,6 +72,7 @@ const CalendarEventForm = ({
 }: CalendarEventFormProps) => {
   // const [calendarEvents, setCalendarEvents] = useState<CalendarEvents[]>([]);
   // const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const { session } = UserAuth();
   // console.log(session?.user.id);
@@ -193,38 +199,44 @@ const CalendarEventForm = ({
     }
   };
 
-  // // 削除処理
-  // const handleDeleteCalendarEvent = async (
-  //   transactionIds: string | readonly string[]
-  // ) => {
-  //   try {
-  //     // オブジェクト(複数)ならそのまま、単一ならオブジェクト化する。
-  //     const idsToDelete = Array.isArray(transactionIds)
-  //       ? transactionIds
-  //       : [transactionIds];
-  //     console.log('削除対象', idsToDelete);
+  // 削除処理
+  const handleDeleteCalendarEvent = async (
+    selectedCalendarEventIds: string | readonly string[]
+  ) => {
+    try {
+      if (!session?.user.id) return;
 
-  //     for (const id of idsToDelete) {
-  //       // firestoreのデータ削除
-  //       await deleteDoc(doc(db, 'Transactions', id));
-  //     }
-  //     // リロードなしですぐに画面に反映されるために
-  //     const filterdTransactions = transactions.filter(
-  //       (transaction) => !idsToDelete.includes(transaction.id)
-  //     );
-  //     // console.log(filterdTransactions);
-  //     setTransactions(filterdTransactions);
-  //   } catch (err) {
-  //     // error
-  //     if (isFireStoreError(err)) {
-  //       console.error('firebaseのエラーは', err);
-  //       console.error('firebaseのエラーメッセージは', err.message);
-  //       console.error('firebaseのエラーコードは', err.code);
-  //     } else {
-  //       console.error('一般的なエラーは', err);
-  //     }
-  //   }
-  // };
+      // 呼び出し側は string 単体/配列を渡してくる想定
+      const idsToDelete = Array.isArray(selectedCalendarEventIds)
+        ? [...selectedCalendarEventIds]
+        : [selectedCalendarEventIds];
+      console.log('削除対象', idsToDelete);
+
+      // DB 側 id 型（number）に合わせる
+      const numberIds = idsToDelete.map((id) => Number(id)) as number[];
+
+      const { error } = await supabase
+        .from('calendar_events')
+        .delete()
+        .in('id', numberIds);
+
+      if (error) {
+        console.error('Supabaseのエラーは', error);
+        console.error('Supabaseのエラーメッセージは', error.message);
+        console.error('Supabaseのエラー詳細は', error.details);
+        console.error('Supabaseのエラーコードは', error.code);
+        return;
+      }
+
+      // フロント（状態）からも即時反映で削除
+      const filterdCalendarEvents = calendar_allEvents.filter(
+        (ev) => !idsToDelete.includes(String(ev.id))
+      );
+      setCalendar_allEvents(filterdCalendarEvents);
+    } catch (err) {
+      console.error('一般的なエラーは', err);
+    }
+  };
 
   // // 変更処理
   // const handleUpdateCalendarEvent = async (
@@ -295,14 +307,15 @@ const CalendarEventForm = ({
     });
   };
 
-  // // フォームを削除
-  // const handleDelete = () => {
-  //   if (selectedCalendarEvent) {
-  //     handleDeleteCalendarEvent(selectedCalendarEvent.id);
-  //     setSelectedCalendarEvent(null);
-  //     setIsDialogOpen(false);
-  //   }
-  // };
+  // フォームを削除
+  const handleDelete = async () => {
+    if (selectedCalendarEvent) {
+      await handleDeleteCalendarEvent(selectedCalendarEvent.id);
+      setIsDialogOpen(false);
+      setSelectedCalendarEvent(null);
+      setSelectDate(isoDate);
+    }
+  };
 
   const categories = useMemo(
     () => [
@@ -513,10 +526,11 @@ const CalendarEventForm = ({
             {selectedCalendarEvent && (
               // 削除ボタン
               <Button
-                // onClick={handleDelete}
+                onClick={() => setIsDeleteConfirmOpen(true)}
                 variant='outlined'
-                color='secondary'
+                color='error'
                 fullWidth
+                startIcon={<DeleteForeverRoundedIcon />}
               >
                 削除
               </Button>
@@ -524,6 +538,79 @@ const CalendarEventForm = ({
           </Stack>
         </Box>
       </DialogContent>
+
+      {/* カレンダーイベント削除する際の最終確認Dialog */}
+      <Dialog
+        open={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        maxWidth='xs'
+        fullWidth
+        aria-labelledby='confirm-delete-title'
+        slots={{ transition: Zoom }}
+        slotProps={{
+          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
+        }}
+      >
+        <DialogTitle
+          id='confirm-delete-title'
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            py: 2,
+            px: 2.5,
+          }}
+        >
+          <Avatar
+            sx={(t) => ({
+              bgcolor: 'transparent',
+              color: t.palette.error.light,
+              width: 40,
+              height: 40,
+            })}
+          >
+            <DeleteForeverRoundedIcon />
+          </Avatar>
+          <Box>
+            <Typography variant='subtitle1' fontWeight={700}>
+              イベントを削除しますか？
+            </Typography>
+            <Typography variant='body2' color='text.secondary'>
+              この操作は取り消せません。
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 0, px: 2.5, pb: 2 }}>
+          <Stack spacing={0.5}>
+            <Typography variant='body2' color='text.secondary'>
+              対象
+            </Typography>
+            <Typography variant='body1' fontWeight={600} noWrap>
+              {selectedCalendarEvent?.title || '(無題)'}
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              {selectedCalendarEvent?.date}
+            </Typography>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Button onClick={() => setIsDeleteConfirmOpen(false)} autoFocus>
+            キャンセル
+          </Button>
+          <Button
+            onClick={async () => {
+              await handleDelete();
+              setIsDeleteConfirmOpen(false);
+            }}
+            color='error'
+            variant='contained'
+          >
+            削除する
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };

@@ -225,19 +225,17 @@ CalendarProps) => {
   const handleCalendarEventClick = (arg: EventClickArg) => {
     // alert(selectDate);
     if (!arg.event._instance?.range.start) return;
-
-    console.log(arg.event._def.publicId);
-    console.log(arg.event._def.extendedProps.user_id);
-    console.log(extractYMD(arg.event._instance?.range.start).isoDate);
-    console.log(arg.event._def.title);
-    console.log(arg.event._def.extendedProps.category);
-    console.log(arg.event._def.extendedProps.description);
-    console.log(arg.event._def.extendedProps.is_allday);
-    console.log(arg.event._def.extendedProps.start_at);
-    console.log(arg.event._def.extendedProps.end_at);
-    console.log(arg.event._def.extendedProps.created_at);
-    console.log(arg.event._def.extendedProps.updated_at);
-
+    // console.log(arg.event._def.publicId);
+    // console.log(arg.event._def.extendedProps.user_id);
+    // console.log(extractYMD(arg.event._instance?.range.start).isoDate);
+    // console.log(arg.event._def.title);
+    // console.log(arg.event._def.extendedProps.category);
+    // console.log(arg.event._def.extendedProps.description);
+    // console.log(arg.event._def.extendedProps.is_allday);
+    // console.log(arg.event._def.extendedProps.start_at);
+    // console.log(arg.event._def.extendedProps.end_at);
+    // console.log(arg.event._def.extendedProps.created_at);
+    // console.log(arg.event._def.extendedProps.updated_at);
     const selectedCalendarEventContent = {
       id: arg.event._def.publicId,
       user_id: arg.event._def.extendedProps.user_id,
@@ -251,10 +249,9 @@ CalendarProps) => {
       created_at: arg.event._def.extendedProps.created_at,
       updated_at: arg.event._def.extendedProps.updated_at,
     };
-    console.log(selectedCalendarEventContent);
-
-    setIsDialogOpen(true);
+    // console.log(selectedCalendarEventContent);
     setSelectedCalendarEvent(selectedCalendarEventContent);
+    setIsDialogOpen(true);
   };
 
   // イベントコンテント;
