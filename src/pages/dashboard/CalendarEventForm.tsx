@@ -46,6 +46,7 @@ import { UserAuth } from '../../context/AuthContext';
 import { Avatar } from '@mui/material';
 import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import Zoom from '@mui/material/Zoom';
 
 interface CalendarEventFormProps {
@@ -73,8 +74,10 @@ const CalendarEventForm = ({
 }: CalendarEventFormProps) => {
   // const [calendarEvents, setCalendarEvents] = useState<CalendarEvents[]>([]);
   // const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isUpdateConfirmOpen, setIsUpdateConfirmOpen] = useState(false);
+  const [pendingCreate, setPendingCreate] = useState<Schema | null>(null);
   const [pendingUpdate, setPendingUpdate] = useState<Schema | null>(null);
 
   const { session } = UserAuth();
@@ -300,21 +303,24 @@ const CalendarEventForm = ({
   const onSubmit: SubmitHandler<Schema> = (data) => {
     console.log(data);
     if (selectedCalendarEvent) {
-      // 既存更新
+      // 既存更新の最終確認
       setPendingUpdate(data);
       setIsUpdateConfirmOpen(true);
-      return; // 一時保存して、更新最終確認dialogへ
+      return; // 一時保存して、既存更新最終確認dialogへ
     } else {
-      // 新規保存
-      handleSaveCalendarEvent(data)
-        .then(() => {
-          console.log('保存しました。');
-          setSelectedCalendarEvent(null);
-          setIsDialogOpen(false);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+      // 新規保存の最終確認
+      setPendingCreate(data);
+      setIsCreateConfirmOpen(true);
+      return; // 一時保存して、新規保存最終確認dialogへ
+      // handleSaveCalendarEvent(data)
+      //   .then(() => {
+      //     console.log('保存しました。');
+      //     setSelectedCalendarEvent(null);
+      //     setIsDialogOpen(false);
+      //   })
+      //   .catch((error) => {
+      //     console.error(error);
+      //   });
     }
     reset({
       date: data.date,
@@ -423,6 +429,7 @@ const CalendarEventForm = ({
       onClose={handleCloseForm}
       fullWidth
       maxWidth={'sm'}
+      slots={{ transition: Zoom }}
     >
       <DialogContent>
         {/* 入力エリアヘッダー */}
@@ -622,6 +629,124 @@ const CalendarEventForm = ({
         </Box>
       </DialogContent>
 
+      {/* カレンダーイベント新規保存の最終確認Dialog */}
+      <Dialog
+        open={isCreateConfirmOpen}
+        onClose={() => setIsCreateConfirmOpen(false)}
+        maxWidth='xs'
+        fullWidth
+        aria-labelledby='confirm-create-title'
+        slots={{ transition: Zoom }}
+        slotProps={{
+          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
+        }}
+      >
+        <DialogTitle
+          id='confirm-create-title'
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            py: 2,
+            px: 2.5,
+          }}
+        >
+          <Avatar
+            sx={(t) => ({
+              bgcolor: 'transparent',
+              color: t.palette.primary.main,
+              width: 40,
+              height: 40,
+            })}
+          >
+            <SaveRoundedIcon />
+          </Avatar>
+          <Box>
+            <Typography variant='subtitle1' fontWeight={700}>
+              イベントを保存しますか？
+            </Typography>
+            <Typography variant='body2' color='text.secondary'>
+              内容を確認してください。
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 0, px: 2.5, pb: 2 }}>
+          {/* 対象タイトル/日付 */}
+          <Stack spacing={0.5} mb={1.5}>
+            <Typography variant='body2' color='text.secondary'>
+              対象
+            </Typography>
+            <Typography variant='body1' fontWeight={600} noWrap>
+              {pendingCreate?.title || '(無題)'}
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              {pendingCreate?.date}
+            </Typography>
+          </Stack>
+
+          {/* 入力内容のサマリ（更新の見た目に寄せた2列レイアウト） */}
+          {pendingCreate && (
+            <Stack spacing={0.75}>
+              {[
+                ['日付', pendingCreate.date],
+                ['タイトル', pendingCreate.title || '—'],
+                ['カテゴリ', pendingCreate.category || '—'],
+                ['備考', pendingCreate.description || '—'],
+                ['終日', pendingCreate.is_allday ? 'あり' : 'なし'],
+                [
+                  '開始時刻',
+                  pendingCreate.is_allday ? '—' : pendingCreate.start_at || '—',
+                ],
+                [
+                  '終了時刻',
+                  pendingCreate.is_allday ? '—' : pendingCreate.end_at || '—',
+                ],
+              ].map(([label, value]) => (
+                <Box
+                  key={String(label)}
+                  sx={(t) => ({
+                    display: 'grid',
+                    gridTemplateColumns: '88px 1fr',
+                    gap: 1,
+                    alignItems: 'start',
+                    p: 1,
+                    borderRadius: 2,
+                    bgcolor: t.palette.action.hover,
+                  })}
+                >
+                  <Typography variant='caption' color='text.secondary'>
+                    {label}
+                  </Typography>
+                  <Typography variant='body2' fontWeight={600}>
+                    {value as string}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Button onClick={() => setIsCreateConfirmOpen(false)} autoFocus>
+            戻る
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!pendingCreate) return;
+              await handleSaveCalendarEvent(pendingCreate);
+
+              setIsCreateConfirmOpen(false);
+              setIsDialogOpen(false);
+              setSelectedCalendarEvent(null);
+            }}
+            variant='contained'
+          >
+            保存する
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* カレンダーイベント更新する際の最終確認Dialog */}
       <Dialog
         open={isUpdateConfirmOpen}
@@ -723,16 +848,6 @@ const CalendarEventForm = ({
             戻る
           </Button>
           <Button
-            // handleUpdateCalendarEvent(data, selectedCalendarEvent.id)
-            //   .then(() => {
-            //     console.log('更新しました。');
-            //     setSelectedCalendarEvent(null);
-            //     setIsDialogOpen(false);
-            //   })
-            //   .catch((error) => {
-            //     console.error(error);
-            //   });
-
             onClick={async () => {
               if (!pendingUpdate || !selectedCalendarEvent) return;
               await handleUpdateCalendarEvent(
@@ -745,15 +860,6 @@ const CalendarEventForm = ({
               // 親ダイアログを閉じ、フォームを初期化
               setIsDialogOpen(false);
               setSelectedCalendarEvent(null);
-              // reset({
-              //   date: isoDate,
-              //   category: '',
-              //   title: '',
-              //   description: '',
-              //   is_allday: true,
-              //   start_at: null,
-              //   end_at: null,
-              // });
             }}
             variant='contained'
           >
