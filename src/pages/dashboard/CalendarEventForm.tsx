@@ -45,6 +45,7 @@ import type { CalendarMonthlyEventsProps } from './Calendar';
 import { UserAuth } from '../../context/AuthContext';
 import { Avatar } from '@mui/material';
 import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import Zoom from '@mui/material/Zoom';
 
 interface CalendarEventFormProps {
@@ -73,6 +74,8 @@ const CalendarEventForm = ({
   // const [calendarEvents, setCalendarEvents] = useState<CalendarEvents[]>([]);
   // const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isUpdateConfirmOpen, setIsUpdateConfirmOpen] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState<Schema | null>(null);
 
   const { session } = UserAuth();
   // console.log(session?.user.id);
@@ -201,15 +204,15 @@ const CalendarEventForm = ({
 
   // 削除処理
   const handleDeleteCalendarEvent = async (
-    selectedCalendarEventIds: string | readonly string[]
+    selectedEvIds: string | readonly string[]
   ) => {
     try {
       if (!session?.user.id) return;
 
       // 呼び出し側は string 単体/配列を渡してくる想定
-      const idsToDelete = Array.isArray(selectedCalendarEventIds)
-        ? [...selectedCalendarEventIds]
-        : [selectedCalendarEventIds];
+      const idsToDelete = Array.isArray(selectedEvIds)
+        ? [...selectedEvIds]
+        : [selectedEvIds];
       console.log('削除対象', idsToDelete);
 
       // DB 側 id 型（number）に合わせる
@@ -238,32 +241,53 @@ const CalendarEventForm = ({
     }
   };
 
-  // // 変更処理
-  // const handleUpdateCalendarEvent = async (
-  //   transaction: Schema,
-  //   transactionId: string
-  // ) => {
-  //   try {
-  //     // firestore更新処理
-  //     const docRef = doc(db, 'Transactions', transactionId);
-  //     await updateDoc(docRef, transaction);
-  //     // フロント更新
-  //     const updatedTransactions = transactions.map((t) =>
-  //       t.id === transactionId ? { ...t, ...transaction } : t
-  //     ) as Transaction[];
-  //     // console.log(updatedTransactions);
-  //     setTransactions(updatedTransactions);
-  //   } catch (err) {
-  //     // error
-  //     if (isFireStoreError(err)) {
-  //       console.error('firebaseのエラーは', err);
-  //       console.error('firebaseのエラーメッセージは', err.message);
-  //       console.error('firebaseのエラーコードは', err.code);
-  //     } else {
-  //       console.error('一般的なエラーは', err);
-  //     }
-  //   }
-  // };
+  // 変更処理
+  const handleUpdateCalendarEvent = async (
+    selectedEvData: Schema,
+    selectedEvId: string
+  ) => {
+    try {
+      if (!session?.user.id) return;
+
+      // DBに入れる前に型をキレイに：終日のときは null、時間アリのとき '' は null に
+      const updatedCalendarEvData = {
+        date: selectedEvData.date,
+        title: selectedEvData.title,
+        category: selectedEvData.category,
+        description: selectedEvData.description,
+        is_allday: selectedEvData.is_allday,
+        start_at: selectedEvData.is_allday
+          ? null
+          : selectedEvData.start_at || null,
+        end_at: selectedEvData.is_allday ? null : selectedEvData.end_at || null,
+      };
+
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .update(updatedCalendarEvData)
+        .eq('id', Number(selectedEvId))
+        // .eq('user_id', session.user.id) // RLS 対策（自分のレコード限定）
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabaseのエラーは', error);
+        console.error('Supabaseのエラーメッセージは', error.message);
+        console.error('Supabaseのエラー詳細は', error.details);
+        console.error('Supabaseのエラーコードは', error.code);
+        return;
+      }
+
+      // ローカル状態を即反映
+      setCalendar_allEvents((prev) =>
+        prev.map((ev) =>
+          ev.id === Number(selectedEvId) ? (data as CalendarEvents) : ev
+        )
+      );
+    } catch (err) {
+      console.error('一般的なエラーは', err);
+    }
+  };
 
   // フォームclose処理
   const handleCloseForm = () => {
@@ -275,27 +299,23 @@ const CalendarEventForm = ({
   // 送信処理
   const onSubmit: SubmitHandler<Schema> = (data) => {
     console.log(data);
-    // if (selectedCalendarEvent) {
-    //   handleUpdateCalendarEvent(data, selectedCalendarEvent.id)
-    //     .then(() => {
-    //       console.log('更新しました。');
-    //       setSelectedCalendarEvent(null);
-    //       setIsDialogOpen(false);
-    //     })
-    //     .catch((error) => {
-    //       console.error(error);
-    //     });
-    // } else {
-    handleSaveCalendarEvent(data)
-      .then(() => {
-        console.log('保存しました。');
-        setSelectedCalendarEvent(null);
-        setIsDialogOpen(false);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-    // }
+    if (selectedCalendarEvent) {
+      // 既存更新
+      setPendingUpdate(data);
+      setIsUpdateConfirmOpen(true);
+      return; // 一時保存して、更新最終確認dialogへ
+    } else {
+      // 新規保存
+      handleSaveCalendarEvent(data)
+        .then(() => {
+          console.log('保存しました。');
+          setSelectedCalendarEvent(null);
+          setIsDialogOpen(false);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
     reset({
       date: data.date,
       category: '',
@@ -306,6 +326,64 @@ const CalendarEventForm = ({
       end_at: null,
     });
   };
+
+  // 変更点を見やすくするための差分生成
+  const updateDiff = useMemo(() => {
+    if (!pendingUpdate || !selectedCalendarEvent) return [];
+    const before = {
+      date: selectedCalendarEvent.date ?? '',
+      title: selectedCalendarEvent.title ?? '',
+      category: selectedCalendarEvent.category ?? '',
+      description: selectedCalendarEvent.description ?? '',
+      is_allday: !!selectedCalendarEvent.is_allday,
+      start_at: selectedCalendarEvent.is_allday
+        ? null
+        : selectedCalendarEvent.start_at ?? null,
+      end_at: selectedCalendarEvent.is_allday
+        ? null
+        : selectedCalendarEvent.end_at ?? null,
+    };
+    const after = {
+      date: pendingUpdate.date,
+      title: pendingUpdate.title,
+      category: pendingUpdate.category,
+      description: pendingUpdate.description,
+      is_allday: pendingUpdate.is_allday,
+      start_at: pendingUpdate.is_allday ? null : pendingUpdate.start_at ?? null,
+      end_at: pendingUpdate.is_allday ? null : pendingUpdate.end_at ?? null,
+    };
+
+    const labels: Record<keyof typeof after, string> = {
+      date: '日付',
+      title: 'タイトル',
+      category: 'カテゴリ',
+      description: '備考',
+      is_allday: '終日',
+      start_at: '開始時刻',
+      end_at: '終了時刻',
+    };
+
+    const fmt = (
+      keyName: keyof typeof after,
+      value: string | boolean | null
+    ) => {
+      if (keyName === 'is_allday') return value ? 'あり' : 'なし';
+      if (value === null || value === '') return '—';
+      return String(value);
+    };
+
+    return (Object.keys(after) as (keyof typeof after)[])
+      .filter(
+        (keyName) =>
+          fmt(keyName, before[keyName]) !== fmt(keyName, after[keyName])
+      )
+      .map((keyName) => ({
+        key: keyName,
+        label: labels[keyName],
+        before: fmt(keyName, before[keyName]),
+        after: fmt(keyName, after[keyName]),
+      }));
+  }, [pendingUpdate, selectedCalendarEvent]);
 
   // フォームを削除
   const handleDelete = async () => {
@@ -345,7 +423,6 @@ const CalendarEventForm = ({
       onClose={handleCloseForm}
       fullWidth
       maxWidth={'sm'}
-      // sx={{ bgcolor: 'red' }}
     >
       <DialogContent>
         {/* 入力エリアヘッダー */}
@@ -519,7 +596,13 @@ const CalendarEventForm = ({
             </Stack>
 
             {/* 保存 or 更新 ボタン */}
-            <Button type='submit' variant='contained' color='primary' fullWidth>
+            <Button
+              type='submit'
+              variant='contained'
+              color='primary'
+              fullWidth
+              startIcon={<EditRoundedIcon />}
+            >
               {selectedCalendarEvent ? '更新' : '保存'}
             </Button>
 
@@ -538,6 +621,146 @@ const CalendarEventForm = ({
           </Stack>
         </Box>
       </DialogContent>
+
+      {/* カレンダーイベント更新する際の最終確認Dialog */}
+      <Dialog
+        open={isUpdateConfirmOpen}
+        onClose={() => setIsUpdateConfirmOpen(false)}
+        maxWidth='xs'
+        fullWidth
+        aria-labelledby='confirm-update-title'
+        slots={{ transition: Zoom }}
+        slotProps={{
+          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
+        }}
+      >
+        <DialogTitle
+          id='confirm-update-title'
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            py: 2,
+            px: 2.5,
+          }}
+        >
+          <Avatar
+            sx={(t) => ({
+              bgcolor: 'transparent',
+              color: t.palette.primary.main,
+              width: 40,
+              height: 40,
+            })}
+          >
+            <EditRoundedIcon />
+          </Avatar>
+          <Box>
+            <Typography variant='subtitle1' fontWeight={700}>
+              イベントを更新しますか？
+            </Typography>
+            <Typography variant='body2' color='text.secondary'>
+              変更点を確認してください。
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 0, px: 2.5, pb: 2 }}>
+          {/* 対象タイトル/日付 */}
+          <Stack spacing={0.5} mb={1.5}>
+            <Typography variant='body2' color='text.secondary'>
+              対象
+            </Typography>
+            <Typography variant='body1' fontWeight={600} noWrap>
+              {pendingUpdate?.title || selectedCalendarEvent?.title || '(無題)'}
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              {pendingUpdate?.date || selectedCalendarEvent?.date}
+            </Typography>
+          </Stack>
+
+          {/* 変更点リスト */}
+          {updateDiff.length > 0 ? (
+            <Stack spacing={0.75}>
+              {updateDiff.map((row) => (
+                <Box
+                  key={String(row.key)}
+                  sx={(t) => ({
+                    display: 'grid',
+                    gridTemplateColumns: '88px 1fr',
+                    gap: 1,
+                    alignItems: 'start',
+                    p: 1,
+                    borderRadius: 2,
+                    bgcolor: t.palette.action.hover,
+                  })}
+                >
+                  <Typography variant='caption' color='text.secondary'>
+                    {row.label}
+                  </Typography>
+                  <Box>
+                    <Typography
+                      variant='body2'
+                      sx={{ textDecoration: 'line-through', opacity: 0.6 }}
+                    >
+                      {row.before}
+                    </Typography>
+                    <Typography variant='body2' fontWeight={600}>
+                      {row.after}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+          ) : (
+            <Typography variant='body2' color='text.secondary'>
+              変更点はありません（そのまま更新できます）。
+            </Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Button onClick={() => setIsUpdateConfirmOpen(false)} autoFocus>
+            戻る
+          </Button>
+          <Button
+            // handleUpdateCalendarEvent(data, selectedCalendarEvent.id)
+            //   .then(() => {
+            //     console.log('更新しました。');
+            //     setSelectedCalendarEvent(null);
+            //     setIsDialogOpen(false);
+            //   })
+            //   .catch((error) => {
+            //     console.error(error);
+            //   });
+
+            onClick={async () => {
+              if (!pendingUpdate || !selectedCalendarEvent) return;
+              await handleUpdateCalendarEvent(
+                pendingUpdate,
+                selectedCalendarEvent.id
+              );
+              setIsUpdateConfirmOpen(false);
+              console.log('更新しました。');
+
+              // 親ダイアログを閉じ、フォームを初期化
+              setIsDialogOpen(false);
+              setSelectedCalendarEvent(null);
+              // reset({
+              //   date: isoDate,
+              //   category: '',
+              //   title: '',
+              //   description: '',
+              //   is_allday: true,
+              //   start_at: null,
+              //   end_at: null,
+              // });
+            }}
+            variant='contained'
+          >
+            更新する
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* カレンダーイベント削除する際の最終確認Dialog */}
       <Dialog
