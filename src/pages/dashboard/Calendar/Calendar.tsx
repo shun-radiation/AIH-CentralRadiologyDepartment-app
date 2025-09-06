@@ -1,11 +1,11 @@
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import jaLocale from '@fullcalendar/core/locales/ja';
-import { useDateInfo } from '../../context/dateInfo/useDateInfo';
+import { useDateInfo } from '../../../context/dateInfo/useDateInfo';
 import { Paper, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../../../utils/supabaseClient';
-import type { CalendarEvents } from '../../../types/databaseTypes';
+import { supabase } from '../../../../utils/supabaseClient';
+import type { CalendarEvents } from '../../../../types/databaseTypes';
 import interactionPlugin, {
   type DateClickArg,
 } from '@fullcalendar/interaction';
@@ -16,10 +16,10 @@ import type {
 } from '@fullcalendar/core/index.js';
 import tippy, { type Instance } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
-import '../../styles/calendar.css';
+import '../../../styles/calendar.css';
 import * as JapaneseHolidays from 'japanese-holidays';
-import { UserAuth } from '../../context/AuthContext';
-import { extractYMD } from '../../utils/date';
+import { UserAuth } from '../../../context/AuthContext';
+import { extractYMD } from '../../../utils/date';
 
 // import { useTheme } from '@mui/material';
 

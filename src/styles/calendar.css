@@ -7,7 +7,7 @@
   /* background-color: transparent; */
   border: none;
   text-align: center;
-  /* pointer-events: none; ポインターイベントを無視する */
+  cursor: pointer;
 }
 
 /* カレンダーの背景色設定 */

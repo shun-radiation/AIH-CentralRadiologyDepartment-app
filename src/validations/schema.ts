@@ -82,25 +82,19 @@ const TimedEventSchema = z
     }
   });
 
-// // ⏰ is_allday が false の場合 → start_at, end_at 必須 & 時刻比較
-// const TimedEventSchema = z
-//   .object({
-//     ...baseSchema,
-//     is_allday: z.literal(false),
-//     start_at: z.string().min(1, { message: '開始時刻は必須です。' }), // "HH:mm"
-//     end_at: z.string().min(1, { message: '終了時刻は必須です。' }), // "HH:mm"
-//   })
-//   .refine(
-//     ({ start_at, end_at }) => {
-//       const start = dayjs(start_at, 'HH:mm');
-//       const end = dayjs(end_at, 'HH:mm');
-//       return end.isAfter(start);
-//     },
-//     {
-//       message: '開始時刻より後にしてください',
-//       path: ['end_at'],
-//     }
-//   );
+z.config({
+  customError: (iss) => {
+    if (
+      iss.code === 'invalid_type' &&
+      iss.expected === 'string' &&
+      iss.input === null
+    ) {
+      return '値を入力してください。';
+    }
+    // 他はデフォルトに委譲
+    return undefined;
+  },
+});
 
 export const CalendarEventSchema = z.discriminatedUnion('is_allday', [
   AllDayEventSchema,

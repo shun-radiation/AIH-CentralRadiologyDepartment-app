@@ -7,6 +7,8 @@ import { theme } from './theme/theme';
 import CssBaseline from '@mui/material/CssBaseline';
 import { UserContextProvider } from './context/userInfo/UserContext';
 import { DateContextProvider } from './context/dateInfo/DateContext';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,7 +17,9 @@ createRoot(document.getElementById('root')!).render(
       <AuthContextProvider>
         <DateContextProvider>
           <UserContextProvider>
-            <App />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <App />
+            </LocalizationProvider>
           </UserContextProvider>
         </DateContextProvider>
       </AuthContextProvider>

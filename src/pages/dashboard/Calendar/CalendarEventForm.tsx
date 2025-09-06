@@ -2,9 +2,7 @@ import {
   Box,
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
-  DialogTitle,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -22,7 +20,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { CalendarEvents } from '../../../types/databaseTypes';
+import type { CalendarEvents } from '../../../../types/databaseTypes';
 // import type { Schema } from '../../validations/schema';
 // import { supabase } from '../../../utils/supabaseClient';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
@@ -38,16 +36,18 @@ import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
 import { MdCastForEducation } from 'react-icons/md';
 import { MdEmojiEvents } from 'react-icons/md';
 import { CiCircleMore } from 'react-icons/ci';
-import { CalendarEventSchema, type Schema } from '../../validations/schema';
-import { useDateInfo } from '../../context/dateInfo/useDateInfo';
-import { supabase } from '../../../utils/supabaseClient';
+import { CalendarEventSchema, type Schema } from '../../../validations/schema';
+import { useDateInfo } from '../../../context/dateInfo/useDateInfo';
+import { supabase } from '../../../../utils/supabaseClient';
 import type { CalendarMonthlyEventsProps } from './Calendar';
-import { UserAuth } from '../../context/AuthContext';
-import { Avatar } from '@mui/material';
-import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
+import { UserAuth } from '../../../context/AuthContext';
 import Zoom from '@mui/material/Zoom';
+import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
+import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
+import CalendarEventConfirmDialog from './CalendarEventConfirmDialog';
+import { TimeField } from '@mui/x-date-pickers';
+import dayjs from 'dayjs';
 
 interface CalendarEventFormProps {
   calendar_allEvents: CalendarEvents[];
@@ -112,10 +112,6 @@ const CalendarEventForm = ({
 
   useEffect(() => {
     if (!isDialogOpen) return;
-    console.log(selectedCalendarEvent?.is_allday);
-    console.log(!selectedCalendarEvent?.is_allday);
-    console.log(!!selectedCalendarEvent?.is_allday);
-
     if (selectedCalendarEvent) {
       // 編集時：選択イベントでフォームを上書き
       const ev = selectedCalendarEvent;
@@ -312,25 +308,7 @@ const CalendarEventForm = ({
       setPendingCreate(data);
       setIsCreateConfirmOpen(true);
       return; // 一時保存して、新規保存最終確認dialogへ
-      // handleSaveCalendarEvent(data)
-      //   .then(() => {
-      //     console.log('保存しました。');
-      //     setSelectedCalendarEvent(null);
-      //     setIsDialogOpen(false);
-      //   })
-      //   .catch((error) => {
-      //     console.error(error);
-      //   });
     }
-    reset({
-      date: data.date,
-      category: '',
-      title: '',
-      description: '',
-      is_allday: true,
-      start_at: null,
-      end_at: null,
-    });
   };
 
   // 変更点を見やすくするための差分生成
@@ -550,25 +528,25 @@ const CalendarEventForm = ({
                 name='start_at'
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
+                  <TimeField
                     label='開始時刻'
-                    type='time'
-                    disabled={isAllDay} // ← 終日が true のとき灰色（入力不可）
-                    value={field.value ?? ''} // ← 表示は常に string
-                    onChange={(e) => {
-                      field.onChange(
-                        e.target.value === '' ? null : e.target.value
-                      ); // ← '' は null に正規化
-                      void trigger('end_at'); // ← start変更で end を再検証
+                    format='HH:mm'
+                    ampm={false}
+                    minutesStep={1} // ← 矢印キーで±1分（制限なし）
+                    disabled={isAllDay}
+                    value={field.value ? dayjs(field.value, 'HH:mm') : null}
+                    onChange={(v) => {
+                      field.onChange(v ? v.format('HH:mm') : null);
+                      void trigger('end_at');
                     }}
                     slotProps={{
-                      inputLabel: { shrink: true },
-                      htmlInput: { step: 600 },
+                      textField: {
+                        error: !!errors.start_at,
+                        helperText: errors.start_at?.message,
+                        sx: { minWidth: 120 },
+                        inputProps: { 'aria-label': '開始時刻 (HH:MM)' },
+                      },
                     }}
-                    error={!!errors.start_at}
-                    // helperText={errors.start_at ? '開始時刻を入力' : ''}
-                    helperText={errors.start_at?.message}
                   />
                 )}
               />
@@ -578,25 +556,24 @@ const CalendarEventForm = ({
                 name='end_at'
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    {...field}
+                  <TimeField
                     label='終了時刻'
-                    type='time'
-                    disabled={isAllDay} // ← 終日が true のとき灰色（入力不可）
-                    value={field.value ?? ''} // ← 表示は常に string
-                    onChange={(e) => {
-                      field.onChange(
-                        e.target.value === '' ? null : e.target.value
-                      ); // ← '' は null に正規化
-                      void trigger('end_at'); // ← 自身も即再検証（安全策）
-                    }}
+                    format='HH:mm'
+                    ampm={false}
+                    minutesStep={1}
+                    disabled={isAllDay}
+                    value={field.value ? dayjs(field.value, 'HH:mm') : null}
+                    onChange={(v) =>
+                      field.onChange(v ? v.format('HH:mm') : null)
+                    }
                     slotProps={{
-                      inputLabel: { shrink: true },
-                      htmlInput: { step: 600 },
+                      textField: {
+                        error: !!errors.end_at,
+                        helperText: errors.end_at?.message,
+                        sx: { minWidth: 120 },
+                        inputProps: { 'aria-label': '終了時刻 (HH:MM)' },
+                      },
                     }}
-                    error={!!errors.end_at}
-                    // helperText={errors.end_at ? '終了時刻を入力' : ''}
-                    helperText={errors.end_at?.message}
                   />
                 )}
               />
@@ -608,7 +585,13 @@ const CalendarEventForm = ({
               variant='contained'
               color='primary'
               fullWidth
-              startIcon={<EditRoundedIcon />}
+              startIcon={
+                selectedCalendarEvent ? (
+                  <EditRoundedIcon />
+                ) : (
+                  <SaveRoundedIcon />
+                )
+              }
             >
               {selectedCalendarEvent ? '更新' : '保存'}
             </Button>
@@ -629,317 +612,24 @@ const CalendarEventForm = ({
         </Box>
       </DialogContent>
 
-      {/* カレンダーイベント新規保存の最終確認Dialog */}
-      <Dialog
-        open={isCreateConfirmOpen}
-        onClose={() => setIsCreateConfirmOpen(false)}
-        maxWidth='xs'
-        fullWidth
-        aria-labelledby='confirm-create-title'
-        slots={{ transition: Zoom }}
-        slotProps={{
-          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
-        }}
-      >
-        <DialogTitle
-          id='confirm-create-title'
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            py: 2,
-            px: 2.5,
-          }}
-        >
-          <Avatar
-            sx={(t) => ({
-              bgcolor: 'transparent',
-              color: t.palette.primary.main,
-              width: 40,
-              height: 40,
-            })}
-          >
-            <SaveRoundedIcon />
-          </Avatar>
-          <Box>
-            <Typography variant='subtitle1' fontWeight={700}>
-              イベントを保存しますか？
-            </Typography>
-            <Typography variant='body2' color='text.secondary'>
-              内容を確認してください。
-            </Typography>
-          </Box>
-        </DialogTitle>
-
-        <DialogContent sx={{ pt: 0, px: 2.5, pb: 2 }}>
-          {/* 対象タイトル/日付 */}
-          <Stack spacing={0.5} mb={1.5}>
-            <Typography variant='body2' color='text.secondary'>
-              対象
-            </Typography>
-            <Typography variant='body1' fontWeight={600} noWrap>
-              {pendingCreate?.title || '(無題)'}
-            </Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {pendingCreate?.date}
-            </Typography>
-          </Stack>
-
-          {/* 入力内容のサマリ（更新の見た目に寄せた2列レイアウト） */}
-          {pendingCreate && (
-            <Stack spacing={0.75}>
-              {[
-                ['日付', pendingCreate.date],
-                ['タイトル', pendingCreate.title || '—'],
-                ['カテゴリ', pendingCreate.category || '—'],
-                ['備考', pendingCreate.description || '—'],
-                ['終日', pendingCreate.is_allday ? 'あり' : 'なし'],
-                [
-                  '開始時刻',
-                  pendingCreate.is_allday ? '—' : pendingCreate.start_at || '—',
-                ],
-                [
-                  '終了時刻',
-                  pendingCreate.is_allday ? '—' : pendingCreate.end_at || '—',
-                ],
-              ].map(([label, value]) => (
-                <Box
-                  key={String(label)}
-                  sx={(t) => ({
-                    display: 'grid',
-                    gridTemplateColumns: '88px 1fr',
-                    gap: 1,
-                    alignItems: 'start',
-                    p: 1,
-                    borderRadius: 2,
-                    bgcolor: t.palette.action.hover,
-                  })}
-                >
-                  <Typography variant='caption' color='text.secondary'>
-                    {label}
-                  </Typography>
-                  <Typography variant='body2' fontWeight={600}>
-                    {value as string}
-                  </Typography>
-                </Box>
-              ))}
-            </Stack>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setIsCreateConfirmOpen(false)} autoFocus>
-            戻る
-          </Button>
-          <Button
-            onClick={async () => {
-              if (!pendingCreate) return;
-              await handleSaveCalendarEvent(pendingCreate);
-
-              setIsCreateConfirmOpen(false);
-              setIsDialogOpen(false);
-              setSelectedCalendarEvent(null);
-            }}
-            variant='contained'
-          >
-            保存する
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* カレンダーイベント更新する際の最終確認Dialog */}
-      <Dialog
-        open={isUpdateConfirmOpen}
-        onClose={() => setIsUpdateConfirmOpen(false)}
-        maxWidth='xs'
-        fullWidth
-        aria-labelledby='confirm-update-title'
-        slots={{ transition: Zoom }}
-        slotProps={{
-          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
-        }}
-      >
-        <DialogTitle
-          id='confirm-update-title'
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            py: 2,
-            px: 2.5,
-          }}
-        >
-          <Avatar
-            sx={(t) => ({
-              bgcolor: 'transparent',
-              color: t.palette.primary.main,
-              width: 40,
-              height: 40,
-            })}
-          >
-            <EditRoundedIcon />
-          </Avatar>
-          <Box>
-            <Typography variant='subtitle1' fontWeight={700}>
-              イベントを更新しますか？
-            </Typography>
-            <Typography variant='body2' color='text.secondary'>
-              変更点を確認してください。
-            </Typography>
-          </Box>
-        </DialogTitle>
-
-        <DialogContent sx={{ pt: 0, px: 2.5, pb: 2 }}>
-          {/* 対象タイトル/日付 */}
-          <Stack spacing={0.5} mb={1.5}>
-            <Typography variant='body2' color='text.secondary'>
-              対象
-            </Typography>
-            <Typography variant='body1' fontWeight={600} noWrap>
-              {pendingUpdate?.title || selectedCalendarEvent?.title || '(無題)'}
-            </Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {pendingUpdate?.date || selectedCalendarEvent?.date}
-            </Typography>
-          </Stack>
-
-          {/* 変更点リスト */}
-          {updateDiff.length > 0 ? (
-            <Stack spacing={0.75}>
-              {updateDiff.map((row) => (
-                <Box
-                  key={String(row.key)}
-                  sx={(t) => ({
-                    display: 'grid',
-                    gridTemplateColumns: '88px 1fr',
-                    gap: 1,
-                    alignItems: 'start',
-                    p: 1,
-                    borderRadius: 2,
-                    bgcolor: t.palette.action.hover,
-                  })}
-                >
-                  <Typography variant='caption' color='text.secondary'>
-                    {row.label}
-                  </Typography>
-                  <Box>
-                    <Typography
-                      variant='body2'
-                      sx={{ textDecoration: 'line-through', opacity: 0.6 }}
-                    >
-                      {row.before}
-                    </Typography>
-                    <Typography variant='body2' fontWeight={600}>
-                      {row.after}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Stack>
-          ) : (
-            <Typography variant='body2' color='text.secondary'>
-              変更点はありません（そのまま更新できます）。
-            </Typography>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setIsUpdateConfirmOpen(false)} autoFocus>
-            戻る
-          </Button>
-          <Button
-            onClick={async () => {
-              if (!pendingUpdate || !selectedCalendarEvent) return;
-              await handleUpdateCalendarEvent(
-                pendingUpdate,
-                selectedCalendarEvent.id
-              );
-              setIsUpdateConfirmOpen(false);
-              console.log('更新しました。');
-
-              // 親ダイアログを閉じ、フォームを初期化
-              setIsDialogOpen(false);
-              setSelectedCalendarEvent(null);
-            }}
-            variant='contained'
-          >
-            更新する
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* カレンダーイベント削除する際の最終確認Dialog */}
-      <Dialog
-        open={isDeleteConfirmOpen}
-        onClose={() => setIsDeleteConfirmOpen(false)}
-        maxWidth='xs'
-        fullWidth
-        aria-labelledby='confirm-delete-title'
-        slots={{ transition: Zoom }}
-        slotProps={{
-          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
-        }}
-      >
-        <DialogTitle
-          id='confirm-delete-title'
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            py: 2,
-            px: 2.5,
-          }}
-        >
-          <Avatar
-            sx={(t) => ({
-              bgcolor: 'transparent',
-              color: t.palette.error.light,
-              width: 40,
-              height: 40,
-            })}
-          >
-            <DeleteForeverRoundedIcon />
-          </Avatar>
-          <Box>
-            <Typography variant='subtitle1' fontWeight={700}>
-              イベントを削除しますか？
-            </Typography>
-            <Typography variant='body2' color='text.secondary'>
-              この操作は取り消せません。
-            </Typography>
-          </Box>
-        </DialogTitle>
-
-        <DialogContent sx={{ pt: 0, px: 2.5, pb: 2 }}>
-          <Stack spacing={0.5}>
-            <Typography variant='body2' color='text.secondary'>
-              対象
-            </Typography>
-            <Typography variant='body1' fontWeight={600} noWrap>
-              {selectedCalendarEvent?.title || '(無題)'}
-            </Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {selectedCalendarEvent?.date}
-            </Typography>
-          </Stack>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setIsDeleteConfirmOpen(false)} autoFocus>
-            キャンセル
-          </Button>
-          <Button
-            onClick={async () => {
-              await handleDelete();
-              setIsDeleteConfirmOpen(false);
-            }}
-            color='error'
-            variant='contained'
-          >
-            削除する
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* 新規保存・既存更新・既存削除の際の最終確認フォーム */}
+      <CalendarEventConfirmDialog
+        isCreateConfirmOpen={isCreateConfirmOpen}
+        isDeleteConfirmOpen={isDeleteConfirmOpen}
+        isUpdateConfirmOpen={isUpdateConfirmOpen}
+        setIsCreateConfirmOpen={setIsCreateConfirmOpen}
+        setIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
+        setIsUpdateConfirmOpen={setIsUpdateConfirmOpen}
+        pendingCreate={pendingCreate}
+        pendingUpdate={pendingUpdate}
+        setIsDialogOpen={setIsDialogOpen}
+        selectedCalendarEvent={selectedCalendarEvent}
+        setSelectedCalendarEvent={setSelectedCalendarEvent}
+        handleSaveCalendarEvent={handleSaveCalendarEvent}
+        handleUpdateCalendarEvent={handleUpdateCalendarEvent}
+        handleDelete={handleDelete}
+        updateDiff={updateDiff}
+      />
     </Dialog>
   );
 };

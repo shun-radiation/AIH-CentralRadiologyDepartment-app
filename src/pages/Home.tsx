@@ -13,10 +13,10 @@ import type {
 } from '../../types/databaseTypes';
 import Calendar, {
   type CalendarMonthlyEventsProps,
-} from './dashboard/Calendar';
+} from './dashboard/Calendar/Calendar';
 // import { useDateInfo } from '../context/dateInfo/useDateInfo';
 import { useUserInfo } from '../context/userInfo/useUserInfo';
-import CalendarEventForm from './dashboard/CalendarEventForm';
+import CalendarEventForm from './dashboard/Calendar/CalendarEventForm';
 import { useDateInfo } from '../context/dateInfo/useDateInfo';
 
 const Home = () => {
