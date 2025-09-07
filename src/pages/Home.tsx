@@ -4,12 +4,12 @@ import Link from '@mui/material/Link';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import { TasksProgress } from '../components/home/tasks-progress';
-import { useEffect, useState } from 'react';
-import { supabase } from '../../utils/supabaseClient';
+import { useState } from 'react';
+// import { supabase } from '../../utils/supabaseClient';
 import type {
   CalendarEvents,
-  ModalitiesType,
-  OrganizationType,
+  // ModalitiesType,
+  // OrganizationType,
 } from '../../types/databaseTypes';
 import Calendar, {
   type CalendarMonthlyEventsProps,
@@ -18,16 +18,22 @@ import Calendar, {
 import { useUserInfo } from '../context/userInfo/useUserInfo';
 import CalendarEventForm from './dashboard/Calendar/CalendarEventForm';
 import { useDateInfo } from '../context/dateInfo/useDateInfo';
+import { Alert, Snackbar, type AlertColor } from '@mui/material';
 
 const Home = () => {
-  const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
-  const [modalities, setModalities] = useState<ModalitiesType[]>([]);
+  // const [organizations, setOrganizations] = useState<OrganizationType[]>([]);
+  // const [modalities, setModalities] = useState<ModalitiesType[]>([]);
   const [calendar_allEvents, setCalendar_allEvents] = useState<
     CalendarEvents[]
   >([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCalendarEvent, setSelectedCalendarEvent] =
     useState<CalendarMonthlyEventsProps | null>(null);
+
+  const [calendarSnackbarOpen, setCalendarSnackbarOpen] = useState(false);
+  const [calendarSnackbarMessage, setCalendarSnackbarMessage] = useState('');
+  const [calendarSnackbarSeverity, setCalendarSnackbarSeverity] =
+    useState<AlertColor>('success');
 
   const { session } = UserAuth();
   const { userInfo } = useUserInfo();
@@ -56,28 +62,30 @@ const Home = () => {
   // console.log('session.user.id', session?.user.id);
   // console.log(userInfo);
 
-  useEffect(() => {
-    getOrganizations();
-    getModalities();
-  }, []);
+  // useEffect(() => {
+  //   getOrganizations();
+  //   getModalities();
+  // }, []);
 
-  const getOrganizations = async () => {
-    const { data, error } = await supabase.from('organizations').select();
-    if (data) {
-      setOrganizations(data);
-    } else {
-      console.error(error);
-    }
-  };
-  const getModalities = async () => {
-    const { data, error } = await supabase.from('modalities').select();
-    if (data) {
-      setModalities(data);
-      // console.log(data);
-    } else {
-      console.error(error);
-    }
-  };
+  // const getOrganizations = async () => {
+  //   const { data, error } = await supabase.from('organizations').select();
+  //   if (data) {
+  //     setOrganizations(data);
+  //   } else {
+  //     console.error(error);
+  //   }
+  //   console.log(organizations);
+  // };
+  // const getModalities = async () => {
+  //   const { data, error } = await supabase.from('modalities').select();
+  //   if (data) {
+  //     setModalities(data);
+  //     // console.log(data);
+  //   } else {
+  //     console.error(error);
+  //   }
+  //   console.log(modalities);
+  // };
 
   const room = [
     '51A撮影室',
@@ -94,6 +102,15 @@ const Home = () => {
     // 'ICUポータブル',
     // '夜勤・休日確認',
   ];
+
+  const handleSnackbarClose = (
+    _e?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
+    if (reason === 'clickaway') return; // 外側クリックで勝手に閉じない
+    setCalendarSnackbarOpen(false);
+  };
+
   return (
     <>
       <Calendar
@@ -121,34 +138,36 @@ const Home = () => {
         setSelectedCalendarEvent={setSelectedCalendarEvent}
         selectDate={selectDate}
         setSelectDate={setSelectDate}
+        setCalendarSnackbarOpen={setCalendarSnackbarOpen}
+        setCalendarSnackbarMessage={setCalendarSnackbarMessage}
+        setCalendarSnackbarSeverity={setCalendarSnackbarSeverity}
       />
+      <Snackbar
+        open={calendarSnackbarOpen}
+        autoHideDuration={5000} // 5秒で自動クローズ
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={calendarSnackbarSeverity}
+          sx={{ width: '100%' }}
+          variant='filled'
+        >
+          {calendarSnackbarMessage}
+        </Alert>
+      </Snackbar>
       <Box>
         <Typography>Home</Typography>
         <Typography>Welcome, {session?.user.email} 様 !</Typography>
-
-        <br />
-        <ul>
-          {organizations.map((organization) => (
-            <li key={organization.id}>
-              abc{organization.name},{organization.id}
-            </li>
-          ))}
-        </ul>
-        <br />
-        <ul>
-          {modalities.map((modality) => (
-            <li key={modality.id}>
-              {modality.id}:{modality.name}
-            </li>
-          ))}
-        </ul>
-        <br />
         <Typography>{userInfo?.name_kanji}</Typography>
         <Typography>{userInfo?.name_kana}</Typography>
+        <br />
         <Link href='../sample' variant='body2' sx={{ alignSelf: 'center' }}>
           Sample
         </Link>
       </Box>
+      <br />
       <Grid container spacing={3}>
         {room.map((room) => {
           return (
@@ -163,12 +182,13 @@ const Home = () => {
               <TasksProgress
                 sx={{ minHeight: 120 }}
                 roomName={room}
-                value={0}
+                value={30}
               />
             </Grid>
           );
         })}
       </Grid>
+      <br />
     </>
   );
 };

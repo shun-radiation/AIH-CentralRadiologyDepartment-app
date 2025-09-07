@@ -4,7 +4,6 @@ import Grid from '@mui/material/Grid';
 import Tooltip from '@mui/material/Tooltip';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
-import Avatar from '@mui/material/Avatar';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -20,9 +19,8 @@ import ProfileDialog from './accountMenu/ProfileDialog';
 import SettingDialog from './accountMenu/SettingDialog';
 import SignoutDialog from './accountMenu/SignoutDialog';
 import { Button, DialogActions } from '@mui/material';
-
-const userName = 'ユーザー';
-const userEmail = '仮メール';
+import ProfileAvatar from '../../avatar/ProfileAvatar';
+import { useUserInfo } from '../../../context/userInfo/useUserInfo';
 
 type AccountMenu = 'プロフィール' | '設定' | 'サインアウト';
 
@@ -38,6 +36,8 @@ const AccountIconButton = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectAccountMenu, setSelectAccountMenu] =
     useState<AccountMenu>('プロフィール');
+
+  const { userInfo } = useUserInfo();
 
   // フォーカスを当てたい要素を参照
   const descriptionRef = useRef<HTMLParagraphElement | null>(null);
@@ -67,11 +67,12 @@ const AccountIconButton = () => {
     設定: <SettingDialog />,
     サインアウト: <SignoutDialog />,
   };
+  console.log('aaaaaaaa', userInfo);
 
   return (
     <div>
       {/* ユーザーメニュー */}
-      <Tooltip title={userEmail ?? userName}>
+      <Tooltip title={'アカウント'}>
         <IconButton
           onClick={handleAvatarClick}
           size='medium'
@@ -81,15 +82,7 @@ const AccountIconButton = () => {
           aria-expanded={isDialogOpen ? 'true' : undefined}
           aria-label='アカウントメニューを開く'
         >
-          <Avatar
-            sx={{
-              width: { xs: 24, md: 32 },
-              height: { xs: 24, md: 32 },
-              fontSize: 'small',
-            }}
-          >
-            {userName?.[0] ?? 'U'}
-          </Avatar>
+          <ProfileAvatar formName={userInfo?.name_kanji} size={40} />
         </IconButton>
       </Tooltip>
 

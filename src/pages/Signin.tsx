@@ -13,8 +13,6 @@ import { styled } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { UserAuth } from '../context/AuthContext';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -111,11 +109,9 @@ const Signin = () => {
             <Box
               component='form'
               onSubmit={handleSignin}
-              noValidate
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                width: '100%',
                 gap: 2,
               }}
             >
@@ -154,10 +150,10 @@ const Signin = () => {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </FormControl>
-              <FormControlLabel
+              {/* <FormControlLabel
                 control={<Checkbox value='remember' color='primary' />}
                 label='Remember me'
-              />
+              /> */}
               {/* <ForgotPassword open={open} handleClose={handleClose} /> */}
               <Button
                 type='submit'
@@ -179,15 +175,15 @@ const Signin = () => {
                   {error}
                 </Typography>
               )}
-              <Link
+              {/* <Link
                 component='button'
                 type='button'
-                // onClick={handleClickOpen}
+                onClick={handleClickOpen}
                 variant='body2'
                 sx={{ alignSelf: 'center' }}
               >
                 Forgot your password?
-              </Link>
+              </Link> */}
             </Box>
             <Divider>
               <Typography sx={{ color: 'text.secondary' }}>or</Typography>

@@ -9,6 +9,7 @@ import {
   Stack,
   Typography,
   Zoom,
+  type AlertColor,
 } from '@mui/material';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
@@ -50,6 +51,9 @@ interface CalendarEventConfirmDialogProps {
     before: string;
     after: string;
   }[];
+  setCalendarSnackbarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setCalendarSnackbarMessage: React.Dispatch<React.SetStateAction<string>>;
+  setCalendarSnackbarSeverity: React.Dispatch<React.SetStateAction<AlertColor>>;
 }
 
 const CalendarEventConfirmDialog = ({
@@ -68,6 +72,9 @@ const CalendarEventConfirmDialog = ({
   handleUpdateCalendarEvent,
   handleDelete,
   updateDiff,
+  setCalendarSnackbarOpen,
+  setCalendarSnackbarMessage,
+  setCalendarSnackbarSeverity,
 }: CalendarEventConfirmDialogProps) => {
   const createConfirmBtnRef = useRef<HTMLButtonElement | null>(null);
   const updateConfirmBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -97,10 +104,15 @@ const CalendarEventConfirmDialog = ({
                 setIsCreateConfirmOpen(false);
                 setIsDialogOpen(false);
                 setSelectedCalendarEvent(null);
+                setCalendarSnackbarMessage('保存に成功しました！');
+                setCalendarSnackbarSeverity('success');
               } catch (error) {
                 console.error(error);
+                setCalendarSnackbarMessage(`保存に失敗しました... ${error}`);
+                setCalendarSnackbarSeverity('error');
               } finally {
                 setIsSubmitting(false);
+                setCalendarSnackbarOpen(true);
               }
             },
             sx: { borderRadius: 3, p: 1, overflow: 'hidden' },
@@ -234,8 +246,14 @@ const CalendarEventConfirmDialog = ({
                 setIsDialogOpen(false);
                 setSelectedCalendarEvent(null);
                 console.log('更新しました。');
+                setCalendarSnackbarMessage('更新に成功しました！');
+                setCalendarSnackbarSeverity('success');
               } catch (error) {
                 console.error(error);
+                setCalendarSnackbarMessage(`更新に失敗しました... ${error}`);
+                setCalendarSnackbarSeverity('error');
+              } finally {
+                setCalendarSnackbarOpen(true);
               }
             },
             sx: { borderRadius: 3, p: 1, overflow: 'hidden' },
@@ -410,9 +428,16 @@ const CalendarEventConfirmDialog = ({
               await handleDelete()
                 .then(() => {
                   setIsDeleteConfirmOpen(false);
+                  setCalendarSnackbarMessage('削除に成功しました！');
+                  setCalendarSnackbarSeverity('success');
                 })
                 .catch((error) => {
                   console.error(error);
+                  setCalendarSnackbarMessage(`削除に失敗しました... ${error}`);
+                  setCalendarSnackbarSeverity('error');
+                })
+                .finally(() => {
+                  setCalendarSnackbarOpen(true);
                 });
             }}
             color='error'

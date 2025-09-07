@@ -15,6 +15,7 @@ import {
   Switch,
   TextField,
   Typography,
+  type AlertColor,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useMemo, useState } from 'react';
@@ -60,6 +61,9 @@ interface CalendarEventFormProps {
   >;
   selectDate: string;
   setSelectDate: React.Dispatch<React.SetStateAction<string>>;
+  setCalendarSnackbarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setCalendarSnackbarMessage: React.Dispatch<React.SetStateAction<string>>;
+  setCalendarSnackbarSeverity: React.Dispatch<React.SetStateAction<AlertColor>>;
 }
 
 const CalendarEventForm = ({
@@ -71,6 +75,9 @@ const CalendarEventForm = ({
   setSelectedCalendarEvent,
   selectDate,
   setSelectDate,
+  setCalendarSnackbarOpen,
+  setCalendarSnackbarMessage,
+  setCalendarSnackbarSeverity,
 }: CalendarEventFormProps) => {
   // const [calendarEvents, setCalendarEvents] = useState<CalendarEvents[]>([]);
   // const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -631,6 +638,9 @@ const CalendarEventForm = ({
         handleUpdateCalendarEvent={handleUpdateCalendarEvent}
         handleDelete={handleDelete}
         updateDiff={updateDiff}
+        setCalendarSnackbarOpen={setCalendarSnackbarOpen}
+        setCalendarSnackbarMessage={setCalendarSnackbarMessage}
+        setCalendarSnackbarSeverity={setCalendarSnackbarSeverity}
       />
     </Dialog>
   );

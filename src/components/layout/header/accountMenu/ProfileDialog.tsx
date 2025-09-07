@@ -2,7 +2,6 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
-import Avatar from '@mui/material/Avatar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -24,6 +23,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import Button from '@mui/material/Button';
 import { UserAuth } from '../../../../context/AuthContext';
 import { useUserInfo } from '../../../../context/userInfo/useUserInfo';
+import ProfileAvatar from '../../../avatar/ProfileAvatar';
 
 type FieldProps = {
   label: string;
@@ -64,16 +64,6 @@ function Field({
     />
   );
 }
-
-const getInitials = (name: string | null | undefined) => {
-  if (name) {
-    // 例: "山田 太郎" → "太郎"の先頭 + "山" など好みに合わせて
-    const trimmed = name.replace(/\s+/g, '');
-    if (!trimmed) return 'U';
-    return trimmed.slice(0, 2);
-  }
-  return;
-};
 
 // ===========================================================
 
@@ -283,20 +273,7 @@ const ProfileDialog = () => {
                   mr: -1, // 既定の -8px を緩めたい場合は調整（任意）
                 },
               }}
-              avatar={
-                <Avatar
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: '24%',
-                    fontWeight: 700,
-                    bgcolor: 'primary.main',
-                  }}
-                  aria-label='ユーザーのアバター'
-                >
-                  {getInitials(form?.name_kanji)}
-                </Avatar>
-              }
+              avatar={<ProfileAvatar formName={form?.name_kanji} size={56} />}
               title={
                 <Stack
                   direction='row'
@@ -441,7 +418,7 @@ const ProfileDialog = () => {
 
                 <Grid size={12}>
                   <Field
-                    label='職員番号 (00xxxxx)'
+                    label='職員番号 (00xxxxx : 7桁)'
                     value={form?.employee_number ?? ''}
                     onChange={handleChange('employee_number')}
                     editing={editing}
@@ -450,7 +427,7 @@ const ProfileDialog = () => {
                 </Grid>
                 <Grid size={12}>
                   <Field
-                    label='技師番号 (xxx)'
+                    label='技師番号 (xxx : 1~3桁)'
                     value={form?.technologist_number ?? ''}
                     onChange={handleChange('technologist_number')}
                     editing={editing}

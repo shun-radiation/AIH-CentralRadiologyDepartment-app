@@ -1,6 +1,5 @@
 import {
   Box,
-  Avatar,
   Typography,
   Button,
   Stack,
@@ -12,6 +11,7 @@ import { useState } from 'react';
 import { UserAuth } from '../../../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useUserInfo } from '../../../../context/userInfo/useUserInfo';
+import ProfileAvatar from '../../../avatar/ProfileAvatar';
 
 const SignoutDialog = () => {
   const [loading, setLoading] = useState(false);
@@ -61,11 +61,8 @@ const SignoutDialog = () => {
           }}
         >
           <Box display={'flex'} flexDirection={'column'} alignItems='center'>
-            <Avatar
-              src='https://mui.com/static/images/avatar/1.jpg'
-              sx={{ width: 64, height: 64, mb: 1 }}
-            />
-            <Typography variant='h6' fontWeight={600}>
+            <ProfileAvatar formName={userInfo?.name_kanji} size={70} />
+            <Typography variant='h6' fontWeight={600} sx={{ mt: 1 }}>
               {userInfo?.name_kanji}
             </Typography>
             <Typography variant='body2' color='text.secondary'>

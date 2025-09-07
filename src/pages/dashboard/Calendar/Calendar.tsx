@@ -133,7 +133,7 @@ CalendarProps) => {
       // ↓↓表示イベントのデザインのため
       allDay: event.is_allday,
       start: event.is_allday ? null : `${event.date}T${event.start_at}`,
-      // end: event.is_allday ? null : `${event.date}T${event.end_at}`,
+      end: event.is_allday ? null : `${event.date}T${event.end_at}`,
     }));
   }, [calendar_allEvents, selectYearMonth]);
 
@@ -405,7 +405,6 @@ CalendarProps) => {
             backgroundEvent,
             ...holidayBgEvents,
           ]}
-          // defaultAllDay={false}
           selectable={true}
           eventClick={handleCalendarEventClick}
           // editable={true}
