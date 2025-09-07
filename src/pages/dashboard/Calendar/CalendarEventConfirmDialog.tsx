@@ -15,6 +15,7 @@ import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import type { Schema } from '../../../validations/schema';
 import type { CalendarMonthlyEventsProps } from './Calendar';
+import { useRef } from 'react';
 
 interface CalendarEventConfirmDialogProps {
   isCreateConfirmOpen: boolean;
@@ -68,6 +69,10 @@ const CalendarEventConfirmDialog = ({
   handleDelete,
   updateDiff,
 }: CalendarEventConfirmDialogProps) => {
+  const createConfirmBtnRef = useRef<HTMLButtonElement | null>(null);
+  const updateConfirmBtnRef = useRef<HTMLButtonElement | null>(null);
+  // const deleteConfirmBtnRef = useRef<HTMLButtonElement | null>(null);
+
   return (
     <>
       {/* カレンダーイベント新規保存の最終確認Dialog */}
@@ -79,7 +84,25 @@ const CalendarEventConfirmDialog = ({
         aria-labelledby='confirm-create-title'
         slots={{ transition: Zoom }}
         slotProps={{
-          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
+          paper: {
+            component: 'form',
+            onSubmit: async (e: React.FormEvent<HTMLFormElement>) => {
+              e.preventDefault();
+              if (!pendingCreate) return;
+              try {
+                await handleSaveCalendarEvent(pendingCreate);
+                setIsCreateConfirmOpen(false);
+                setIsDialogOpen(false);
+                setSelectedCalendarEvent(null);
+              } catch (error) {
+                console.error(error);
+              }
+            },
+            sx: { borderRadius: 3, p: 1, overflow: 'hidden' },
+          },
+          transition: {
+            onEntered: () => createConfirmBtnRef.current?.focus(),
+          },
         }}
       >
         <DialogTitle
@@ -169,23 +192,12 @@ const CalendarEventConfirmDialog = ({
         </DialogContent>
 
         <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setIsCreateConfirmOpen(false)} autoFocus>
-            戻る
-          </Button>
+          <Button onClick={() => setIsCreateConfirmOpen(false)}>戻る</Button>
           <Button
-            onClick={async () => {
-              if (!pendingCreate) return;
-              await handleSaveCalendarEvent(pendingCreate)
-                .then(() => {
-                  setIsCreateConfirmOpen(false);
-                  setIsDialogOpen(false);
-                  setSelectedCalendarEvent(null);
-                })
-                .catch((error) => {
-                  console.error(error);
-                });
-            }}
+            type='submit'
             variant='contained'
+            autoFocus
+            ref={createConfirmBtnRef}
           >
             保存する
           </Button>
@@ -201,7 +213,29 @@ const CalendarEventConfirmDialog = ({
         aria-labelledby='confirm-update-title'
         slots={{ transition: Zoom }}
         slotProps={{
-          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
+          paper: {
+            component: 'form',
+            onSubmit: async (e: React.FormEvent<HTMLFormElement>) => {
+              e.preventDefault();
+              if (!pendingUpdate || !selectedCalendarEvent) return;
+              try {
+                await handleUpdateCalendarEvent(
+                  pendingUpdate,
+                  selectedCalendarEvent.id
+                );
+                setIsUpdateConfirmOpen(false);
+                // 親ダイアログを閉じ、選択を解除
+                setIsDialogOpen(false);
+                setSelectedCalendarEvent(null);
+                console.log('更新しました。');
+              } catch (error) {
+                console.error(error);
+              }
+            },
+            sx: { borderRadius: 3, p: 1, overflow: 'hidden' },
+          },
+          // ★ 表示完了で主ボタンにフォーカス
+          transition: { onEntered: () => updateConfirmBtnRef.current?.focus() },
         }}
       >
         <DialogTitle
@@ -293,25 +327,10 @@ const CalendarEventConfirmDialog = ({
             戻る
           </Button>
           <Button
-            onClick={async () => {
-              if (!pendingUpdate || !selectedCalendarEvent) return;
-              await handleUpdateCalendarEvent(
-                pendingUpdate,
-                selectedCalendarEvent.id
-              )
-                .then(() => {
-                  setIsUpdateConfirmOpen(false);
-                  console.log('更新しました。');
-
-                  //  親ダイアログを閉じ、フォームを初期化
-                  setIsDialogOpen(false);
-                  setSelectedCalendarEvent(null);
-                })
-                .catch((error) => {
-                  console.error(error);
-                });
-            }}
+            type='submit'
             variant='contained'
+            autoFocus
+            ref={updateConfirmBtnRef}
           >
             更新する
           </Button>
@@ -327,7 +346,9 @@ const CalendarEventConfirmDialog = ({
         aria-labelledby='confirm-delete-title'
         slots={{ transition: Zoom }}
         slotProps={{
-          paper: { sx: { borderRadius: 3, p: 1, overflow: 'hidden' } },
+          paper: {
+            sx: { borderRadius: 3, p: 1, overflow: 'hidden' },
+          },
         }}
       >
         <DialogTitle
@@ -375,7 +396,7 @@ const CalendarEventConfirmDialog = ({
         </DialogContent>
 
         <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setIsDeleteConfirmOpen(false)} autoFocus>
+          <Button onClick={() => setIsDeleteConfirmOpen(false)} type='button'>
             キャンセル
           </Button>
           <Button

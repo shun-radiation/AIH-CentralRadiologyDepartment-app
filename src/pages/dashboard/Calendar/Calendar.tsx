@@ -130,6 +130,10 @@ CalendarProps) => {
       is_allday: event.is_allday,
       created_at: event.created_at,
       updated_at: event.updated_at,
+      // ↓↓表示イベントのデザインのため
+      allDay: event.is_allday,
+      start: event.is_allday ? null : `${event.date}T${event.start_at}`,
+      // end: event.is_allday ? null : `${event.date}T${event.end_at}`,
     }));
   }, [calendar_allEvents, selectYearMonth]);
 
@@ -309,20 +313,38 @@ CalendarProps) => {
 
     const title = event.title;
     // const time = '終日'; // formatRange(event);
-    const { description } = event.extendedProps as {
-      description?: string;
+    const { description, category, start_at, end_at } = event.extendedProps;
+    const formatTime = (time: string | null) => {
+      if (!time) return '';
+      // "HH:mm:ss" → "HH:mm" にする例
+      return time.slice(0, 5);
     };
 
     const html = `
-    <div style="font-size:12px; line-height:1.5;">
-      <div style="font-weight:600; margin-bottom:2px;">${escapeHtml(
-        title
-      )}</div>
+    <div style="font-size:12px; line-height:1.5; text-align:center; ">
+      <div style="font-weight:bold; padding:2px">${escapeHtml(title)}</div>
+      <div>
       ${
         description
-          ? `<div style="margin-top:4px;">${escapeHtml(description)}</div>`
+          ? `<div style="padding:2px">${escapeHtml(description)}</div>`
           : ''
       }
+      </div>
+      <div>
+      ${category ? `<div style="padding:2px">${category}</div>` : ''}
+      </div>
+      <div>
+      ${
+        start_at || end_at
+          ? `<div style=" padding:2px ">
+        ${start_at ? formatTime(start_at) : ''} 
+        ${end_at ? `〜 ${formatTime(end_at)}` : ''}
+        </div>`
+          : `<div style=" padding:2px ">
+        終日
+        </div>`
+      }
+      </div>
     </div>
   `;
     // 既にインスタンスがあれば内容更新して表示
@@ -383,6 +405,7 @@ CalendarProps) => {
             backgroundEvent,
             ...holidayBgEvents,
           ]}
+          // defaultAllDay={false}
           selectable={true}
           eventClick={handleCalendarEventClick}
           // editable={true}

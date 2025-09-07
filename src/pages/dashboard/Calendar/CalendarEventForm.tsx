@@ -498,6 +498,8 @@ const CalendarEventForm = ({
                   {...field}
                   label='備考'
                   type='text'
+                  multiline
+                  rows={6}
                   error={!!errors.description}
                   helperText={errors.description?.message}
                 />
@@ -532,7 +534,7 @@ const CalendarEventForm = ({
                     label='開始時刻'
                     format='HH:mm'
                     ampm={false}
-                    minutesStep={1} // ← 矢印キーで±1分（制限なし）
+                    // minutesStep={1} // ← 矢印キーで±1分（制限なし）
                     disabled={isAllDay}
                     value={field.value ? dayjs(field.value, 'HH:mm') : null}
                     onChange={(v) => {
@@ -560,7 +562,7 @@ const CalendarEventForm = ({
                     label='終了時刻'
                     format='HH:mm'
                     ampm={false}
-                    minutesStep={1}
+                    // minutesStep={1}
                     disabled={isAllDay}
                     value={field.value ? dayjs(field.value, 'HH:mm') : null}
                     onChange={(v) =>

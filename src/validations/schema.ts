@@ -40,10 +40,18 @@ const AllDayEventSchema = z.object({
   end_at: z.null(),
 });
 
+// 追加: 全角検出ヘルパー（０〜９ と ：）
+const hasFullWidthTimeChars = (s: string) => /[０-９：]/.test(s);
+
 // 共通：HH:mm 形式チェック
-const HHMM = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, {
-  message: 'HH:mm 形式で入力してください。',
-});
+const HHMM = z
+  .string()
+  .refine((v) => !hasFullWidthTimeChars(v), {
+    message: '半角で入力してください。', // ← ここが新規
+  })
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+    message: 'HH:mm 形式で入力してください。',
+  });
 
 // ⏰ is_allday が false の場合 → start_at, end_at 必須 & 時刻比較
 const TimedEventSchema = z
