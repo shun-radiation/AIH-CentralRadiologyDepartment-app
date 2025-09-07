@@ -65,3 +65,10 @@
   width: 100% !important;
 }
 /* ------------------------------------------------- */
+
+.fc-daygrid-dot-event {
+  color: black;
+  .fc-event-title {
+    font-weight: normal;
+  }
+}

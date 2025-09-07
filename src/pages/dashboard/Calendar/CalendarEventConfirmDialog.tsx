@@ -15,7 +15,7 @@ import DeleteForeverRoundedIcon from '@mui/icons-material/DeleteForeverRounded';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import type { Schema } from '../../../validations/schema';
 import type { CalendarMonthlyEventsProps } from './Calendar';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 interface CalendarEventConfirmDialogProps {
   isCreateConfirmOpen: boolean;
@@ -73,6 +73,8 @@ const CalendarEventConfirmDialog = ({
   const updateConfirmBtnRef = useRef<HTMLButtonElement | null>(null);
   // const deleteConfirmBtnRef = useRef<HTMLButtonElement | null>(null);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   return (
     <>
       {/* カレンダーイベント新規保存の最終確認Dialog */}
@@ -87,6 +89,7 @@ const CalendarEventConfirmDialog = ({
           paper: {
             component: 'form',
             onSubmit: async (e: React.FormEvent<HTMLFormElement>) => {
+              setIsSubmitting(true);
               e.preventDefault();
               if (!pendingCreate) return;
               try {
@@ -96,6 +99,8 @@ const CalendarEventConfirmDialog = ({
                 setSelectedCalendarEvent(null);
               } catch (error) {
                 console.error(error);
+              } finally {
+                setIsSubmitting(false);
               }
             },
             sx: { borderRadius: 3, p: 1, overflow: 'hidden' },
@@ -195,6 +200,7 @@ const CalendarEventConfirmDialog = ({
           <Button onClick={() => setIsCreateConfirmOpen(false)}>戻る</Button>
           <Button
             type='submit'
+            disabled={isSubmitting}
             variant='contained'
             autoFocus
             ref={createConfirmBtnRef}
